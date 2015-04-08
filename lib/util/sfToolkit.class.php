@@ -625,9 +625,15 @@ class sfToolkit
       if (preg_match('#/(.?)#', $text, $matches)) {
           $text = str_replace($matches[0], '::'.strtoupper($matches[1]), $text);
       }
-      if (preg_match('/(^|_|-)+(.)/', $text, $matches)) {
-          $text = str_replace($matches[0], strtoupper($matches[2]), $text);
-      }
-      return $text;
+      $text = preg_replace_callback('/(_|-)+(.)/',
+                                    function($matches){
+                                      return strtoupper($matches[2]); 
+                                    },
+                                    $text);
+      //$text = preg_replace_callback();
+      //if (preg_match('/(^|_|-)+(.)/', $text, $matches)) {
+      //    $text = str_replace($matches[0], strtoupper($matches[2]), $text);
+      //}
+      return ucfirst($text);
   }  
 }
