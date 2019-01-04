@@ -416,7 +416,8 @@ abstract class Doctrine_Hydrator_Graph extends Doctrine_Hydrator_Abstract
                     $matchedComponents[] = $table->getComponentName();
                 }
             } else {
-                list($key, $value) = each($inheritanceMap);
+                $key = key($inheritanceMap);
+                $value = current($inheritanceMap);
                 $key = $this->_tables[$component]->getFieldName($key);
                 if ( ! isset($data[$key]) || $data[$key] != $value) {
                     continue;
