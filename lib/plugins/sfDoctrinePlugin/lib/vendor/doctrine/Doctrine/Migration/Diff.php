@@ -171,7 +171,7 @@ class Doctrine_Migration_Diff
 
         // Build schema information for the models
         $fromInfo = $this->_buildModelInformation($fromModels);
-        $toInfo = $this->_buildModelInformation($toModels);
+        $toInfo = $this->_buildModelInformation($toModels, self::$_toPrefix);
 
         // Build array of changes between the from and to information
         $changes = $this->_buildChanges($fromInfo, $toInfo);
@@ -291,13 +291,13 @@ class Doctrine_Migration_Diff
      * @param  array $models Array of models to build the schema information for
      * @return array $info   Array of schema information for all the passed models
      */
-    protected function _buildModelInformation(array $models)
+    protected function _buildModelInformation(array $models, $prefix = '')
     {
         $info = array();
         foreach ($models as $key => $model) {
             $table = Doctrine_Core::getTable($model);
             if ($table->getTableName() !== $this->_migration->getTableName()) {
-                $info[$model] = $table->getExportableFormat();
+                $info[$model] = $table->getExportableFormat(true, $prefix);
             }
         }
 

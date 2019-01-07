@@ -31,9 +31,8 @@
  * @version     $Revision$
  * @link        www.doctrine-project.org
  * @since       1.0
- * @method mixed findBy*(mixed $value) magic finders; @see __call()
- * @method mixed findOneBy*(mixed $value) magic finders; @see __call()
  */
+
 class Doctrine_Table extends Doctrine_Configurable implements Countable, Serializable
 {
     /**
@@ -240,6 +239,7 @@ class Doctrine_Table extends Doctrine_Configurable implements Countable, Seriali
      * @param Doctrine_Connection $conn         the connection associated with this table
      * @param boolean $initDefinition           whether to init the in-memory schema
      */
+
     public function __construct($name, Doctrine_Connection $conn, $initDefinition = false)
     {
         $this->_conn = $conn;
@@ -658,7 +658,7 @@ class Doctrine_Table extends Doctrine_Configurable implements Countable, Seriali
      * @param boolean $parseForeignKeys     whether to include foreign keys definition in the options
      * @return array
      */
-    public function getExportableFormat($parseForeignKeys = true)
+    public function getExportableFormat($parseForeignKeys = true, $prefix = '')
     {
         $columns = array();
         $primary = array();
@@ -688,8 +688,6 @@ class Doctrine_Table extends Doctrine_Configurable implements Countable, Seriali
 
         if ($parseForeignKeys && $this->getAttribute(Doctrine_Core::ATTR_EXPORT) & Doctrine_Core::EXPORT_CONSTRAINTS) {
 
-            $constraints = array();
-
             $emptyIntegrity = array('onUpdate' => null,
                                     'onDelete' => null);
 
@@ -712,7 +710,7 @@ class Doctrine_Table extends Doctrine_Configurable implements Countable, Seriali
                 $integrity = array('onUpdate' => $fk['onUpdate'],
                                    'onDelete' => $fk['onDelete']);
 
-                $fkName = $relation->getForeignKeyName();
+                $fkName = $relation->getForeignKeyName($prefix);
 
                 if ($relation instanceof Doctrine_Relation_LocalKey) {
                     $def = array('name'         => $fkName,
