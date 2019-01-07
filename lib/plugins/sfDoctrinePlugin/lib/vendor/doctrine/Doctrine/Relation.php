@@ -370,12 +370,12 @@ abstract class Doctrine_Relation implements ArrayAccess
      *
      * @return string $foreignKeyName
      */
-    public function getForeignKeyName()
+    public function getForeignKeyName($prefix = '')
     {
         if (isset($this->definition['foreignKeyName'])) {
             return $this->definition['foreignKeyName'];
         }
-        return $this['localTable']->getConnection()->generateUniqueRelationForeignKeyName($this);
+        return $this['localTable']->getConnection()->generateUniqueRelationForeignKeyName($this, $prefix);
     }
 
     /**

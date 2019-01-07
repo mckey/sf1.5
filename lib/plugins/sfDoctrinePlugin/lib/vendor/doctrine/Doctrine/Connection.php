@@ -1640,10 +1640,21 @@ abstract class Doctrine_Connection extends Doctrine_Configurable implements Coun
      * @param  Doctrine_Relation $relation  Relation object to generate the foreign key name for
      * @return string $fkName
      */
-    public function generateUniqueRelationForeignKeyName(Doctrine_Relation $relation)
+    public function generateUniqueRelationForeignKeyName(Doctrine_Relation $relation, $prefix = '')
     {
+        $tableName = $relation['localTable']->getTableName();
+        if(!empty($prefix)) {
+            $normalized_prefix = strtolower(
+              preg_replace(
+                ["/([A-Z]+)/", "/_([A-Z]+)([A-Z][a-z])/"],
+                ["_$1", "_$1_$2"],
+                lcfirst($prefix)
+              )
+            );
+            $tableName = str_replace($normalized_prefix, '', $tableName);
+        }
         $parts = array(
-            $relation['localTable']->getTableName(),
+            $tableName,
             $relation->getLocalColumnName(),
             $relation['table']->getTableName(),
             $relation->getForeignColumnName(),
