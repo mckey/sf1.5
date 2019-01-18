@@ -84,7 +84,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     function __construct($source)
     {
         if(is_subclass_of($source, 'sfDatabase')) {
-            $this->db = $source->getConnection();
+            $this->db = $source->getDoctrineConnection();
         } elseif(is_string($source)) {
             $this->source = (string) $source;
             $this->dsn = $this->parseDSN($this->source);
@@ -181,8 +181,6 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      */
     public function &loadData($variant)
     {
-        $variant = mysqli_real_escape_string($this->db, $variant);
-
         $statement =
           "SELECT t.id, t.source, t.target, t.comments
         FROM trans_unit t, catalogue c
@@ -190,18 +188,18 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
           AND c.name = '{$variant}'
         ORDER BY id ASC";
 
-        $rs = mysqli_query($this->db, $statement);
+        $rs = $this->db->execute($statement);
 
         $result = array();
 
-        while ($row = mysqli_fetch_array($rs, MYSQLI_NUM))
+        while ($row = $rs->fetch(Doctrine_Core::FETCH_NUM))
         {
             $source = $row[1];
             $result[$source][] = $row[2]; //target
             $result[$source][] = $row[0]; //id
             $result[$source][] = $row[3]; //comments
         }
-        mysqli_free_result($rs);
+
         return $result;
     }
 
@@ -214,11 +212,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      */
     protected function getLastModified($source)
     {
-        $source = mysqli_real_escape_string($this->db, $source);
-
-        $rs = mysqli_query($this->db, "SELECT updated_at FROM catalogue WHERE name = '{$source}'");
-        $row = $rs->fetch_array(MYSQLI_NUM);
-        mysqli_free_result($rs);
+        $statement = $this->db->execute("SELECT updated_at FROM catalogue WHERE name = '{$source}'");
+        $row = $statement->fetch(Doctrine_Core::FETCH_NUM);
         return !empty($row[0]) ? (int)$row[0] : 0;
     }
 
@@ -230,11 +225,16 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      */
     public function isValidSource($variant)
     {
-        $variant = mysqli_real_escape_string($this->db, $variant);
-
-        $rs = mysqli_query($this->db,"SELECT COUNT(*) FROM catalogue WHERE name = '{$variant}'");
-        $row = mysqli_fetch_array($rs, MYSQLI_NUM);
-        mysqli_free_result($rs);
+        $statement = $this->db->execute("SELECT COUNT(*) FROM catalogue WHERE name = '{$variant}'");
+        $row = $statement->fetch(Doctrine_Core::FETCH_NUM);
+        if($variant != 'messages' && $row[0] == 0) {
+            $time = date('Y-m-d h:i:s');
+            $statement = "INSERT INTO catalogue
+        (name,source_lang,target_lang,created_at,created_by) VALUES
+        ('{$variant}', 'en','{$this->culture}','{$time}', 1)";
+            $rs = $this->db->execute($statement);
+            return $rs->rowCount() == 1;
+        }
         return $row && $row[0] == '1';
     }
 
@@ -253,25 +253,23 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
         $variant = $catalogue.'.'.$this->culture;
 
-        $name = mysqli_real_escape_string($this->db, $this->getSource($variant));
+        $name = $this->getSource($variant);
 
-        $rs = mysqli_query($this->db,"SELECT id FROM catalogue WHERE name = '{$name}'");
+        $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$name}'");
 
-        if (mysqli_num_rows($rs) != 1)
+        if ($rs->rowCount() != 1)
         {
             return [];
         }
 
-        $catalogue = mysqli_fetch_array($rs, MYSQLI_NUM);
+        $catalogue = $rs->fetch(Doctrine_Core::FETCH_NUM);
         $cat_id = (int) $catalogue[0];
-        mysqli_free_result($rs);
+
 
         // first get the catalogue ID
-        $rs = mysqli_query($this->db,"SELECT COUNT(*) FROM trans_unit WHERE catalogue_id = {$cat_id}");
-
-        $trans_unit = mysqli_fetch_array($rs, MYSQLI_NUM);
+        $rs = $this->db->execute("SELECT COUNT(*) FROM trans_unit WHERE catalogue_id = {$cat_id}");
+        $trans_unit = $rs->fetch(Doctrine_Core::FETCH_NUM);
         $count = (int) $trans_unit[0];
-        mysqli_free_result($rs);
 
         return array($cat_id, $variant, $count);
     }
@@ -285,7 +283,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     {
         $time = date('Y-m-d h:i:s');
 
-        $result = mysqli_query($this->db, "UPDATE catalogue SET updated_at = '{$time}' WHERE id = {$cat_id}");
+        $result = $this->db->execute("UPDATE catalogue SET updated_at = '{$time}' WHERE id = {$cat_id}");
 
         if ($this->cache)
         {
@@ -335,11 +333,10 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         {
             $count++;
             $inserted++;
-            $message = mysqli_real_escape_string($this->db, $message);
             $statement = "INSERT INTO trans_unit
-        (catalogue_id,msg,source,created_at) VALUES
-        ({$cat_id}, {$count},'{$message}','{$time}')";
-            mysqli_query($this->db, $statement);
+        (catalogue_id,msg,source,created_at,created_by) VALUES
+        ({$cat_id}, {$count},'{$message}','{$time}', 1)";
+            $this->db->execute($statement);
         }
         if ($inserted > 0)
         {
@@ -373,9 +370,9 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND source = '{$text}'";
         $deleted = false;
 
-        mysqli_query($this->db, $statement);
+        $rs = $this->db->execute($statement);
 
-        if (mysqli_affected_rows($this->db) == 1)
+        if ($rs->rowCount() == 1)
         {
             $deleted = $this->updateCatalogueTime($cat_id, $variant);
         }
@@ -414,8 +411,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
         $updated = false;
 
-        mysqli_query($this->db, $statement);
-        if (mysqli_affected_rows($this->db) == 1)
+        $rs = $this->db->execute($statement);
+        if ($rs->rowCount() == 1)
         {
             $updated = $this->updateCatalogueTime($cat_id, $variant);
         }
@@ -431,9 +428,9 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     function catalogues()
     {
         $statement = 'SELECT name FROM catalogue ORDER BY name';
-        $rs = mysqli_query($this->db, $statement);
+        $rs = $this->db->execute($statement);
         $result = array();
-        while($row = mysqli_fetch_array($rs, MYSQLI_NUM))
+        while ($row = $rs->fetch(Doctrine_Core::FETCH_NUM))
         {
             $details = explode('.', $row[0]);
             if (!isset($details[1]))

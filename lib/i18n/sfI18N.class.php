@@ -146,8 +146,9 @@ class sfI18N
     public function createMessageSource($dir = null)
     {
         if($dir === null) {
-            $database_manager = new sfDatabaseManager($this->configuration);
-            $this->options['database'] = $database_manager->getDatabase();
+            $database_manager = new sfDatabaseManager($this->configuration, array('auto_shutdown' => false));
+            $databases = $database_manager->getNames();
+            $this->options['database'] = $database_manager->getDatabase($databases[0]);
         }
         return sfMessageSource::factory($this->options['source'], self::isMessageSourceFileBased($this->options['source']) ? $dir : $this->options['database']);
     }
