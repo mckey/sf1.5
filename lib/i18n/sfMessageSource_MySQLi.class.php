@@ -225,17 +225,15 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      */
     public function isValidSource($variant)
     {
-        $statement = $this->db->execute("SELECT COUNT(*) FROM catalogue WHERE name = '{$variant}'");
-        $row = $statement->fetch(Doctrine_Core::FETCH_NUM);
-        if($variant != 'messages' && $row[0] == 0) {
+        $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$variant}'");
+        if($variant != 'messages' && $variant != 'messages.en' && $rs->rowCount() == 0) {
             $time = date('Y-m-d h:i:s');
             $statement = "INSERT INTO catalogue
         (name,source_lang,target_lang,created_at,created_by) VALUES
         ('{$variant}', 'en','{$this->culture}','{$time}', 1)";
             $rs = $this->db->execute($statement);
-            return $rs->rowCount() == 1;
         }
-        return $row && $row[0] == '1';
+        return $rs->rowCount() == 1;
     }
 
     /**
@@ -246,11 +244,6 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      */
     protected function getCatalogueDetails($catalogue = 'messages')
     {
-        if (empty($catalogue))
-        {
-            $catalogue = 'messages';
-        }
-
         $variant = $catalogue.'.'.$this->culture;
 
         $name = $this->getSource($variant);
@@ -265,11 +258,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         $catalogue = $rs->fetch(Doctrine_Core::FETCH_NUM);
         $cat_id = (int) $catalogue[0];
 
-
-        // first get the catalogue ID
-        $rs = $this->db->execute("SELECT COUNT(*) FROM trans_unit WHERE catalogue_id = {$cat_id}");
-        $trans_unit = $rs->fetch(Doctrine_Core::FETCH_NUM);
-        $count = (int) $trans_unit[0];
+        $rs = $this->db->execute("SELECT id FROM trans_unit WHERE catalogue_id = {$cat_id}");
+        $count = $rs->rowCount();
 
         return array($cat_id, $variant, $count);
     }
@@ -277,6 +267,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     /**
      * Updates the catalogue last modified time.
      *
+     * @param string $cat_id catalogue id
+     * @param string $variant culture
      * @return boolean true if updated, false otherwise.
      */
     protected function updateCatalogueTime($cat_id, $variant)
@@ -333,9 +325,11 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         {
             $count++;
             $inserted++;
+            $formatter = new Doctrine_Formatter();
+            $message = $formatter->quote($message, 'string');
             $statement = "INSERT INTO trans_unit
         (catalogue_id,msg,source,created_at,created_by) VALUES
-        ({$cat_id}, {$count},'{$message}','{$time}', 1)";
+        ({$cat_id}, {$count}, {$message},'{$time}', 1)";
             $this->db->execute($statement);
         }
         if ($inserted > 0)
@@ -365,9 +359,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
             return false;
         }
 
-        $text = mysqli_real_escape_string($this->db, $message);
-
-        $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND source = '{$text}'";
+        $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND source = '{$message}'";
         $deleted = false;
 
         $rs = $this->db->execute($statement);
@@ -389,7 +381,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
      * @param string $catalogue the catalogue of the translation.
      * @return boolean true if translation was updated, false otherwise.
      */
-    function update($text, $target, $comments, $catalogue = 'messages')
+    function update($text, $target, $comments = '', $catalogue = 'messages')
     {
         $details = $this->getCatalogueDetails($catalogue);
         if (count($details) == 3)
@@ -401,13 +393,15 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
             return false;
         }
 
-        $comments = mysqli_real_escape_string($this->db, $comments);
-        $target = mysqli_real_escape_string($this->db, $target);
-        $text = mysqli_real_escape_string($this->db, $text);
+        $formatter = new Doctrine_Formatter();
+
+        $text = $formatter->quote($text, 'string');
+        $target = $formatter->quote($target, 'string');
+        $comments = $formatter->quote($comments, 'string');
 
         $time = date('Y-m-d h:i:s');
 
-        $statement = "UPDATE trans_unit SET target = '{$target}', comments = '{$comments}', updated_at = '{$time}' WHERE catalogue_id = {$cat_id} AND source = '{$text}'";
+        $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' WHERE catalogue_id = {$cat_id} AND source = {$text}";
 
         $updated = false;
 
