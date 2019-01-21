@@ -67,7 +67,7 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
      * $conn = new Doctrine_Adapter_Mock('mysql');
      * </code>
      *
-     * @param string $name 
+     * @param string $name
      * @return void
      */
     public function __construct($name = null)
@@ -116,7 +116,7 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
      */
     public function prepare($query)
     {
-        $mock = new Doctrine_Adapter_Statement_Mock($this, $query);
+        $mock              = new Doctrine_Adapter_Statement_Mock($this);
         $mock->queryString = $query;
 
         return $mock;
@@ -125,7 +125,7 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
     /**
      * Add query to the stack of executed queries
      *
-     * @param string $query 
+     * @param string $query
      * @return void
      */
     public function addQuery($query)
@@ -136,24 +136,27 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
     /**
      * Fake the execution of query and add it to the stack of executed queries
      *
-     * @param string $query 
+     * @param string $query
      * @return Doctrine_Adapter_Statement_Mock $stmt
      */
     public function query($query)
     {
         $this->_queries[] = $query;
 
-        $e    = $this->_exception;
+        $e = $this->_exception;
 
-        if ( ! empty($e)) {
+        if (! empty($e)) {
             $name = $e[0];
 
             $this->_exception = array();
 
-            throw new $name($e[1], $e[2]);
+            /** @var Exception $exception */
+            $exception = new $name($e[1], $e[2]);
+
+            throw $exception;
         }
 
-        $stmt = new Doctrine_Adapter_Statement_Mock($this, $query);
+        $stmt              = new Doctrine_Adapter_Statement_Mock($this);
         $stmt->queryString = $query;
 
         return $stmt;
@@ -172,7 +175,7 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
     /**
      * Quote a value for the dbms
      *
-     * @param string $input 
+     * @param string $input
      * @return string $quoted
      */
     public function quote($input)
@@ -183,21 +186,24 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
     /**
      * Execute a raw sql statement
      *
-     * @param string $statement 
-     * @return void
+     * @param string $statement
+     * @return int
      */
     public function exec($statement)
     {
         $this->_queries[] = $statement;
 
-        $e    = $this->_exception;
+        $e = $this->_exception;
 
-        if ( ! empty($e)) {
+        if (! empty($e)) {
             $name = $e[0];
 
             $this->_exception = array();
 
-            throw new $name($e[1], $e[2]);
+            /** @var Exception $exception */
+            $exception = new $name($e[1], $e[2]);
+
+            throw $exception;
         }
 
         return 0;
@@ -221,7 +227,7 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
     /**
      * Get the id of the last inserted record
      *
-     * @return integer $id
+     * @return integer|null $id
      */
     public function lastInsertId()
     {
@@ -273,6 +279,10 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
         $this->_queries[] = 'ROLLBACK';
     }
 
+    /**
+     * @param string|int $attribute
+     * @return string|null
+     */
     public function getAttribute($attribute)
     {
         if ($attribute == Doctrine_Core::ATTR_DRIVER_NAME) {
@@ -280,15 +290,33 @@ class Doctrine_Adapter_Mock implements Doctrine_Adapter_Interface, Countable
         }
     }
 
+    /**
+     * @return void
+     */
     public function errorCode()
-    { }
+    {
+    }
 
+    /**
+     * @return void
+     */
     public function errorInfo()
-    { }
+    {
+    }
 
+    /**
+     * @param string|int $attribute
+     * @param mixed $value
+     * @return void
+     */
     public function setAttribute($attribute, $value)
-    { }
+    {
+    }
 
+    /**
+     * @return void
+     */
     public function sqliteCreateFunction()
-    { }
+    {
+    }
 }

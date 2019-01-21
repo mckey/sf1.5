@@ -49,9 +49,8 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
      */
     public function add($listener, $name = null)
     {
-        if ( ! ($listener instanceof Doctrine_EventListener_Interface) &&
+        if (! ($listener instanceof Doctrine_EventListener_Interface) &&
              ! ($listener instanceof Doctrine_Overloadable)) {
-            
             throw new Doctrine_EventListener_Exception("Couldn't add eventlistener. EventListeners should implement either Doctrine_EventListener_Interface or Doctrine_Overloadable");
         }
         if ($name === null) {
@@ -70,7 +69,7 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
      */
     public function get($key)
     {
-        if ( ! isset($this->_listeners[$key])) {
+        if (! isset($this->_listeners[$key])) {
             return null;
         }
         return $this->_listeners[$key];
@@ -390,6 +389,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function postConnect(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -397,6 +399,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preConnect(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -404,13 +409,19 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preQuery(Doctrine_Event $event)
-    { 
+    {
         foreach ($this->_listeners as $listener) {
             $listener->preQuery($event);
         }
     }
 
+    /**
+     * @return void
+     */
     public function postQuery(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -418,13 +429,19 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function prePrepare(Doctrine_Event $event)
-    { 
+    {
         foreach ($this->_listeners as $listener) {
             $listener->prePrepare($event);
         }
     }
 
+    /**
+     * @return void
+     */
     public function postPrepare(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -432,6 +449,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preExec(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -439,6 +459,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function postExec(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -446,13 +469,19 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preError(Doctrine_Event $event)
-    { 
+    {
         foreach ($this->_listeners as $listener) {
             $listener->preError($event);
         }
     }
 
+    /**
+     * @return void
+     */
     public function postError(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -460,13 +489,19 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preFetch(Doctrine_Event $event)
-    { 
+    {
         foreach ($this->_listeners as $listener) {
             $listener->preFetch($event);
         }
     }
 
+    /**
+     * @return void
+     */
     public function postFetch(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -474,13 +509,19 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preFetchAll(Doctrine_Event $event)
-    { 
+    {
         foreach ($this->_listeners as $listener) {
             $listener->preFetchAll($event);
         }
     }
 
+    /**
+     * @return void
+     */
     public function postFetchAll(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -488,6 +529,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function preStmtExecute(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {
@@ -495,6 +539,9 @@ class Doctrine_EventListener_Chain extends Doctrine_Access implements Doctrine_E
         }
     }
 
+    /**
+     * @return void
+     */
     public function postStmtExecute(Doctrine_Event $event)
     {
         foreach ($this->_listeners as $listener) {

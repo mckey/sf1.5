@@ -38,7 +38,7 @@ class Doctrine_Validator_Exception extends Doctrine_Exception implements Countab
     private $invalid = array();
 
     /**
-     * @param Doctrine_Validator $validator
+     * @param array $invalid
      */
     public function __construct(array $invalid)
     {
@@ -46,6 +46,9 @@ class Doctrine_Validator_Exception extends Doctrine_Exception implements Countab
         parent::__construct($this->generateMessage());
     }
 
+    /**
+     * @return array
+     */
     public function getInvalidRecords()
     {
         return $this->invalid;
@@ -63,6 +66,8 @@ class Doctrine_Validator_Exception extends Doctrine_Exception implements Countab
 
     /**
      * Generate a message with all classes that have exceptions
+     *
+     * @return string
      */
     private function generateMessage()
     {
@@ -74,11 +79,13 @@ class Doctrine_Validator_Exception extends Doctrine_Exception implements Countab
     }
 
     /**
-     * This method will apply the value of the $function variable as a user_func 
+     * This method will apply the value of the $function variable as a user_func
      * to tall errorstack objects in the exception
      *
-     * @param mixed Either string with function name or array with object, 
+     * @param callable $function Either string with function name or array with object,
      * functionname. See call_user_func in php manual for more inforamtion
+     *
+     * @return void
      */
     public function inspect($function)
     {

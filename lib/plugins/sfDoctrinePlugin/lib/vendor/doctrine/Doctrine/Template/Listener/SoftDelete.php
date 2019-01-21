@@ -38,14 +38,14 @@ class Doctrine_Template_Listener_SoftDelete extends Doctrine_Record_Listener
     /**
      * Array of SoftDelete options
      *
-     * @var string
+     * @var array
      */
     protected $_options = array();
 
     /**
      * __construct
      *
-     * @param string $options 
+     * @param array $options
      * @return void
      */
     public function __construct(array $options)
@@ -72,16 +72,16 @@ class Doctrine_Template_Listener_SoftDelete extends Doctrine_Record_Listener
      */
     public function preDelete(Doctrine_Event $event)
     {
-        $name = $this->_options['name'];
+        $name    = $this->_options['name'];
         $invoker = $event->getInvoker();
-        
+
         if ($this->_options['type'] == 'timestamp') {
             $invoker->$name = date('Y-m-d H:i:s', time());
-        } else if ($this->_options['type'] == 'boolean') {
+        } elseif ($this->_options['type'] == 'boolean') {
             $invoker->$name = true;
         }
 
-        if ( ! $this->_options['hardDelete']) {
+        if (! $this->_options['hardDelete']) {
             $event->skipOperation();
         }
     }
@@ -94,7 +94,7 @@ class Doctrine_Template_Listener_SoftDelete extends Doctrine_Record_Listener
      */
     public function postDelete(Doctrine_Event $event)
     {
-        if ( ! $this->_options['hardDelete']) {
+        if (! $this->_options['hardDelete']) {
             $event->getInvoker()->save();
         }
     }
@@ -109,15 +109,16 @@ class Doctrine_Template_Listener_SoftDelete extends Doctrine_Record_Listener
     public function preDqlDelete(Doctrine_Event $event)
     {
         $params = $event->getParams();
-        $field = $params['alias'] . '.' . $this->_options['name'];
+        $field  = $params['alias'] . '.' . $this->_options['name'];
+        /** @var Doctrine_Query|null|string $query */
         $query = $event->getQuery();
-        if ( ! $query->contains($field)) {
+        if (! $query->contains($field)) {
             $query->from('')->update($params['component']['table']->getOption('name') . ' ' . $params['alias']);
-            
+
             if ($this->_options['type'] == 'timestamp') {
                 $query->set($field, '?', date('Y-m-d H:i:s', time()));
                 $query->addWhere($field . ' IS NULL');
-            } else if ($this->_options['type'] == 'boolean') {
+            } elseif ($this->_options['type'] == 'boolean') {
                 $query->set($field, $query->getConnection()->convertBooleans(true));
                 $query->addWhere(
                     $field . ' = ' . $query->getConnection()->convertBooleans(false)
@@ -127,27 +128,29 @@ class Doctrine_Template_Listener_SoftDelete extends Doctrine_Record_Listener
     }
 
     /**
-     * Implement preDqlSelect() hook and add the deleted flag to all queries for which this model 
+     * Implement preDqlSelect() hook and add the deleted flag to all queries for which this model
      * is being used in.
      *
-     * @param Doctrine_Event $event 
+     * @param Doctrine_Event $event
      * @return void
      */
     public function preDqlSelect(Doctrine_Event $event)
     {
         $params = $event->getParams();
-        $field = $params['alias'] . '.' . $this->_options['name'];
+        $field  = $params['alias'] . '.' . $this->_options['name'];
+        /** @var Doctrine_Query|string|null $query */
         $query = $event->getQuery();
 
         // We only need to add the restriction if:
         // 1 - We are in the root query
         // 2 - We are in the subquery and it defines the component with that alias
-        if (( ! $query->isSubquery() || ($query->isSubquery() && $query->contains(' ' . $params['alias'] . ' '))) && ! $query->contains($field)) {
+        if ((! $query->isSubquery() || ($query->isSubquery() && $query->contains(' ' . $params['alias'] . ' '))) && ! $query->contains($field)) {
             if ($this->_options['type'] == 'timestamp') {
                 $query->addPendingJoinCondition($params['alias'], $field . ' IS NULL');
-            } else if ($this->_options['type'] == 'boolean') {
+            } elseif ($this->_options['type'] == 'boolean') {
                 $query->addPendingJoinCondition(
-                    $params['alias'], $field . ' = ' . $query->getConnection()->convertBooleans(false)
+                    $params['alias'],
+                    $field . ' = ' . $query->getConnection()->convertBooleans(false)
                 );
             }
         }

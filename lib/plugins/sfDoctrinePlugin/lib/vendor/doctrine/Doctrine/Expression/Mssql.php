@@ -39,6 +39,7 @@ class Doctrine_Expression_Mssql extends Doctrine_Expression_Driver
      * - CURRENT_DATE (date, DATE type)
      * - CURRENT_TIME (time, TIME type)
      *
+     * @param string $type
      * @return string to call a variable with the current timestamp
      * @access public
      */
@@ -60,7 +61,7 @@ class Doctrine_Expression_Mssql extends Doctrine_Expression_Driver
      */
     public function substring($value, $position, $length = null)
     {
-        if ( ! is_null($length)) {
+        if (! is_null($length)) {
             return 'SUBSTRING(' . $value . ', ' . $position . ', ' . $length . ')';
         }
         return 'SUBSTRING(' . $value . ', ' . $position . ', LEN(' . $value . ') - ' . $position . ' + 1)';
@@ -69,14 +70,11 @@ class Doctrine_Expression_Mssql extends Doctrine_Expression_Driver
     /**
      * Returns string to concatenate two or more string parameters
      *
-     * @param string $arg1
-     * @param string $arg2
-     * @param string $values...
+     * @param string ...$args
      * @return string to concatenate two strings
      */
-    public function concat()
+    public function concat(...$args)
     {
-        $args = func_get_args();
         return '(' . implode(' + ', $args) . ')';
     }
 
@@ -100,36 +98,5 @@ class Doctrine_Expression_Mssql extends Doctrine_Expression_Driver
     public function length($column)
     {
         return 'LEN (' . $column . ')';
-    }
-
-    /**
-     * Returns an integer representing the specified datepart of the specified date.
-     *
-     * datepart
-     *
-     * Is the parameter that specifies the part of the date to return. The table lists dateparts and abbreviations recognized by Microsoft¨ SQL Serverª.
-     *
-     * Datepart Abbreviations
-     * year yy, yyyy
-     * quarter qq, q
-     * month mm, m
-     * dayofyear dy, y
-     * day dd, d
-     * week wk, ww
-     * weekday dw
-     * hour hh
-     * minute mi, n
-     * second ss, s
-     * millisecond ms
-     *
-     * @param $datepart
-     * @param $date
-     */
-    public function date_part($datepart, $date)
-    {
-        // remove ' and " from datepart for dblib
-        $datepart = str_replace(array('\'', '"'), '', $datepart);
-
-        return 'DATEPART(' . $datepart . ', ' . $date . ')';
     }
 }

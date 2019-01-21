@@ -32,9 +32,19 @@
  */
 abstract class Doctrine_Hook_Parser
 {
+    /**
+     * @var string
+     */
     protected $condition;
+
+    /**
+     * @var array
+     */
     protected $params = array();
 
+    /**
+     * @return string
+     */
     public function getCondition()
     {
         return $this->condition;

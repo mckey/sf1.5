@@ -21,7 +21,7 @@
 
 /**
  * Doctrine_Export_Schema
- * 
+ *
  * Used for exporting a schema to a yaml file
  *
  * @package     Doctrine
@@ -33,16 +33,16 @@
  * @author      Jonathan H. Wage <jwage@mac.com>
  */
 class Doctrine_Export_Schema
-{    
+{
     /**
      * buildSchema
-     * 
+     *
      * Build schema array that can be dumped to file
      *
      * @param string $directory  The directory of models to build the schema from
      * @param array $models      The array of model names to build the schema for
      * @param integer $modelLoading The model loading strategy to use to load the models from the passed directory
-     * @return void
+     * @return array
      */
     public function buildSchema($directory = null, $models = array(), $modelLoading = null)
     {
@@ -51,9 +51,9 @@ class Doctrine_Export_Schema
         } else {
             $loadedModels = Doctrine_Core::getLoadedModels();
         }
-        
+
         $array = array();
-        
+
         $parent = new ReflectionClass('Doctrine_Record');
 
         $sql = array();
@@ -62,19 +62,19 @@ class Doctrine_Export_Schema
         // we iterate through the diff of previously declared classes
         // and currently declared classes
         foreach ($loadedModels as $className) {
-            if ( ! empty($models) && !in_array($className, $models)) {
+            if (! empty($models) && !in_array($className, $models)) {
                 continue;
             }
 
             $recordTable = Doctrine_Core::getTable($className);
-            
+
             $data = $recordTable->getExportableFormat();
-            
-            $table = array();
+
+            $table               = array();
             $table['connection'] = $recordTable->getConnection()->getName();
-            $remove = array('ptype', 'ntype', 'alltypes');
+            $remove              = array('ptype', 'ntype', 'alltypes');
             // Fix explicit length in schema, concat it to type in this format: type(length)
-            foreach ($data['columns'] AS $name => $column) {
+            foreach ($data['columns'] as $name => $column) {
                 if (isset($column['length']) && $column['length'] && isset($column['scale']) && $column['scale']) {
                     $data['columns'][$name]['type'] = $column['type'] . '(' . $column['length'] . ', ' . $column['scale'] . ')';
                     unset($data['columns'][$name]['length'], $data['columns'][$name]['scale']);
@@ -88,7 +88,7 @@ class Doctrine_Export_Schema
                         unset($data['columns'][$name][$value]);
                     }
                 }
-                
+
                 // If type is the only property of the column then lets abbreviate the syntax
                 // columns: { name: string(255) }
                 if (count($data['columns'][$name]) === 1 && isset($data['columns'][$name]['type'])) {
@@ -98,57 +98,58 @@ class Doctrine_Export_Schema
                 }
             }
             $table['tableName'] = $data['tableName'];
-            $table['columns'] = $data['columns'];
-            
+            $table['columns']   = $data['columns'];
+
             $relations = $recordTable->getRelations();
             foreach ($relations as $key => $relation) {
                 $relationData = $relation->toArray();
-                
+
                 $relationKey = $relationData['alias'];
-                
+
                 if (isset($relationData['refTable']) && $relationData['refTable']) {
                     $table['relations'][$relationKey]['refClass'] = $relationData['refTable']->getComponentName();
                 }
-                
+
                 if (isset($relationData['class']) && $relationData['class'] && $relation['class'] != $relationKey) {
                     $table['relations'][$relationKey]['class'] = $relationData['class'];
                 }
- 
-                $table['relations'][$relationKey]['local'] = $relationData['local'];
+
+                $table['relations'][$relationKey]['local']   = $relationData['local'];
                 $table['relations'][$relationKey]['foreign'] = $relationData['foreign'];
-                
+
                 if ($relationData['type'] === Doctrine_Relation::ONE) {
                     $table['relations'][$relationKey]['type'] = 'one';
-                } else if ($relationData['type'] === Doctrine_Relation::MANY) {
+                } elseif ($relationData['type'] === Doctrine_Relation::MANY) {
                     $table['relations'][$relationKey]['type'] = 'many';
                 } else {
                     $table['relations'][$relationKey]['type'] = 'one';
                 }
             }
-            
+
             $array[$className] = $table;
         }
-        
+
         return $array;
     }
 
     /**
      * exportSchema
      *
-     * @param  string $schema 
-     * @param  string $directory 
-     * @param string $string of data in the specified format
+     * @param string $schema
+     * @param string $format
+     * @param string $directory
+     * @param array $models
      * @param integer $modelLoading The model loading strategy to use to load the models from the passed directory
-     * @return void
+     * @return int|false|string
      */
     public function exportSchema($schema, $format = 'yml', $directory = null, $models = array(), $modelLoading = null)
     {
         $array = $this->buildSchema($directory, $models, $modelLoading);
-        
+
         if (is_dir($schema)) {
-          $schema = $schema . DIRECTORY_SEPARATOR . 'schema.' . $format;
+            $schema = $schema . DIRECTORY_SEPARATOR . 'schema.' . $format;
         }
-        
+
         return Doctrine_Parser::dump($array, $format, $schema);
     }
 }

@@ -39,7 +39,7 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
     protected $_conn;
 
     /**
-     * @var mixed $_stmt                    PDOStatement object, boolean false or Doctrine_Adapter_Statement object
+     * @var PDOStatement|Doctrine_Adapter_Statement_Interface $_stmt   PDOStatement or object that implements Doctrine_Adapter_Statement_Interface
      */
     protected $_stmt;
 
@@ -48,7 +48,7 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      *
      * @param Doctrine_Connection $conn     Doctrine_Connection object, every connection
      *                                      statement holds an instance of Doctrine_Connection
-     * @param mixed $stmt
+     * @param PDOStatement|Doctrine_Adapter_Statement_Interface $stmt
      */
     public function __construct(Doctrine_Connection $conn, $stmt)
     {
@@ -59,16 +59,7 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
             throw new Doctrine_Exception('Unknown statement object given.');
         }
     }
-    /**
-     * destructor
-     *
-     * make sure that the cursor is closed
-     *
-     */
-    public function __destruct()
-    {
-        $this->closeCursor();
-    }
+
     /**
      * getConnection
      * returns the connection object this statement uses
@@ -80,11 +71,17 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
         return $this->_conn;
     }
 
+    /**
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
+     */
     public function getStatement()
     {
         return $this->_stmt;
     }
 
+    /**
+     * @return string
+     */
     public function getQuery()
     {
         return $this->_stmt->queryString;
@@ -146,7 +143,7 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      * of stored procedures that return data as output parameters, and some also as input/output
      * parameters that both send in data and are updated to receive it.
      *
-     * @param mixed $param          Parameter identifier. For a prepared statement using named placeholders,
+     * @param mixed $column          Parameter identifier. For a prepared statement using named placeholders,
      *                              this will be a parameter name of the form :name. For a prepared statement
      *                              using question mark placeholders, this will be the 1-indexed position of the parameter
      *
@@ -233,15 +230,14 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      *                                  bound parameters in the SQL statement being executed.
      * @return boolean                  Returns TRUE on success or FALSE on failure.
      */
-    public function execute($params = array())
+    public function execute($params = null)
     {
         try {
             $event = new Doctrine_Event($this, Doctrine_Event::STMT_EXECUTE, $this->getQuery(), $params);
             $this->_conn->getListener()->preStmtExecute($event);
 
             $result = true;
-            if ( ! $event->skipOperation) {
-
+            if (! $event->skipOperation) {
                 if ($this->_conn->getAttribute(Doctrine_Core::ATTR_PORTABILITY) & Doctrine_Core::PORTABILITY_EMPTY_TO_NULL) {
                     foreach ($params as $key => $value) {
                         if ($value === '') {
@@ -270,14 +266,6 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
 
             $this->_conn->getListener()->postStmtExecute($event);
 
-            //fix a possible "ORA-01000: maximum open cursors exceeded" when many non-SELECTs are executed and the profiling is enabled
-            if ('Oracle' == $this->getConnection()->getDriverName()) {
-                $queryBeginningSubstring = strtoupper(substr(ltrim($this->_stmt->queryString), 0, 6));
-                if ($queryBeginningSubstring != 'SELECT' && substr($queryBeginningSubstring, 0, 4) != 'WITH' ){
-                    $this->closeCursor();
-                }
-            }
-
             return $result;
         } catch (PDOException $e) {
         } catch (Doctrine_Adapter_Exception $e) {
@@ -292,7 +280,7 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      * fetch
      *
      * @see Doctrine_Core::FETCH_* constants
-     * @param integer $fetchStyle           Controls how the next row will be returned to the caller.
+     * @param integer $fetchMode           Controls how the next row will be returned to the caller.
      *                                      This value must be one of the Doctrine_Core::FETCH_* constants,
      *                                      defaulting to Doctrine_Core::FETCH_BOTH
      *
@@ -315,19 +303,20 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      *
      * @return mixed
      */
-    public function fetch($fetchMode = Doctrine_Core::FETCH_BOTH,
+    public function fetch(
+        $fetchMode = Doctrine_Core::FETCH_BOTH,
                           $cursorOrientation = Doctrine_Core::FETCH_ORI_NEXT,
-                          $cursorOffset = null)
-    {
+                          $cursorOffset = null
+    ) {
         $event = new Doctrine_Event($this, Doctrine_Event::STMT_FETCH, $this->getQuery());
 
-        $event->fetchMode = $fetchMode;
+        $event->fetchMode         = $fetchMode;
         $event->cursorOrientation = $cursorOrientation;
-        $event->cursorOffset = $cursorOffset;
+        $event->cursorOffset      = $cursorOffset;
 
         $data = $this->_conn->getListener()->preFetch($event);
 
-        if ( ! $event->skipOperation) {
+        if (! $event->skipOperation) {
             $data = $this->_stmt->fetch($fetchMode, $cursorOrientation, $cursorOffset);
         }
 
@@ -349,16 +338,18 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      *
      * @return array
      */
-    public function fetchAll($fetchMode = Doctrine_Core::FETCH_BOTH,
-                             $columnIndex = null)
-    {
-        $event = new Doctrine_Event($this, Doctrine_Event::STMT_FETCHALL, $this->getQuery());
-        $event->fetchMode = $fetchMode;
+    public function fetchAll(
+        $fetchMode = Doctrine_Core::FETCH_BOTH,
+                             $columnIndex = null
+    ) {
+        $event              = new Doctrine_Event($this, Doctrine_Event::STMT_FETCHALL, $this->getQuery());
+        $event->fetchMode   = $fetchMode;
         $event->columnIndex = $columnIndex;
+        $data               = array();
 
         $this->_conn->getListener()->preFetchAll($event);
 
-        if ( ! $event->skipOperation) {
+        if (! $event->skipOperation) {
             if ($columnIndex !== null) {
                 $data = $this->_stmt->fetchAll($fetchMode, $columnIndex);
             } else {
@@ -492,10 +483,17 @@ class Doctrine_Connection_Statement implements Doctrine_Adapter_Statement_Interf
      * Set the default fetch mode for this statement
      *
      * @param integer $mode                 The fetch mode must be one of the Doctrine_Core::FETCH_* constants.
+     * @param string $arg1
+     * @param array $arg2
      * @return boolean                      Returns 1 on success or FALSE on failure.
      */
     public function setFetchMode($mode, $arg1 = null, $arg2 = null)
     {
-        return $this->_stmt->setFetchMode($mode, $arg1, $arg2);
+        // In PHP 5.3 PDO throws an Exception if the number of arguments exceeds 1 except for these three modes
+        if ($mode === Doctrine_Core::FETCH_COLUMN || $mode === Doctrine_Core::FETCH_FUNC || $mode === Doctrine_Core::FETCH_CLASS) {
+            return $this->_stmt->setFetchMode($mode, $arg1, $arg2);
+        } else {
+            return $this->_stmt->setFetchMode($mode);
+        }
     }
 }

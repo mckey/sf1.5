@@ -32,14 +32,18 @@
  */
 class Doctrine_Search_Indexer_Dir
 {
+    /**
+     * @param string $dir
+     * @return void
+     */
     public function add($dir)
     {
-        if ( ! file_exists($dir)) {
-           throw new Doctrine_Search_Indexer_Exception('Unknown directory ' . $dir);
+        if (! file_exists($dir)) {
+            throw new Doctrine_Search_Indexer_Exception('Unknown directory ' . $dir);
         }
 
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::LEAVES_ONLY);
-        
+
         foreach ($it as $file) {
             $this->indexFile($file);
         }

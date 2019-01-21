@@ -18,7 +18,7 @@
  * and is licensed under the LGPL. For more information, see
  * <http://www.doctrine-project.org>.
  */
-                 
+
 /**
  * Doctrine_Tree
  *
@@ -33,7 +33,7 @@
 class Doctrine_Tree
 {
     /**
-     * @param object $table   reference to associated Doctrine_Table instance
+     * @param Doctrine_Table $table   reference to associated Doctrine_Table instance
      */
     protected $table;
 
@@ -41,21 +41,24 @@ class Doctrine_Tree
      * @param array $options
      */
     protected $options = array();
-    
+
+    /**
+     * @var string
+     */
     protected $_baseComponent;
 
     /**
      * constructor, creates tree with reference to table and any options
      *
-     * @param object $table                     instance of Doctrine_Table
+     * @param Doctrine_Table $table                     instance of Doctrine_Table
      * @param array $options                    options
      */
     public function __construct(Doctrine_Table $table, $options)
     {
-        $this->table = $table;
-        $this->options = $options;
+        $this->table          = $table;
+        $this->options        = $options;
         $this->_baseComponent = $table->getComponentName();
-        $class = $this->_baseComponent;
+        $class                = $this->_baseComponent;
         if ($table->getOption('inheritanceMap')) {
             $subclasses = $table->getOption('subclasses');
             while (in_array($class, $subclasses)) {
@@ -70,6 +73,8 @@ class Doctrine_Tree
      * Used to define table attributes required for the given implementation
      *
      * @throws Doctrine_Tree_Exception          if table attributes have not been defined
+     *
+     * @return void
      */
     public function setTableDefinition()
     {
@@ -79,6 +84,7 @@ class Doctrine_Tree
     /**
      * this method is used for setting up relations and attributes and should be used by specific implementations
      *
+     * @return void
      */
     public function setUp()
     {
@@ -87,11 +93,11 @@ class Doctrine_Tree
     /**
      * Factory method to create a Tree.
      *
-     * This is a factory method that returns a tree instance based upon 
+     * This is a factory method that returns a tree instance based upon
      * chosen implementation.
      *
-     * @param object $table                     instance of Doctrine_Table
-     * @param string $impName                   implementation (NestedSet, AdjacencyList, MaterializedPath)
+     * @param Doctrine_Table $table                     instance of Doctrine_Table
+     * @param string $implName                   implementation (NestedSet, AdjacencyList, MaterializedPath)
      * @param array $options                    options
      * @return Doctrine_Tree
      * @throws Doctrine_Exception               if class $implName does not extend Doctrine_Tree
@@ -99,7 +105,7 @@ class Doctrine_Tree
     public static function factory(Doctrine_Table $table, $implName, $options = array())
     {
         $class = 'Doctrine_Tree_' . $implName;
-        if ( ! class_exists($class)) {
+        if (! class_exists($class)) {
             throw new Doctrine_Exception('The chosen class must extend Doctrine_Tree');
         }
         return new $class($table, $options);
@@ -107,25 +113,30 @@ class Doctrine_Tree
 
     /**
      * gets tree attribute value
-     *        
-     */     
+     * @param string $name
+     * @return null|mixed
+     */
     public function getAttribute($name)
     {
-      return isset($this->options[$name]) ? $this->options[$name] : null;
+        return isset($this->options[$name]) ? $this->options[$name] : null;
     }
 
     /**
      * sets tree attribute value
      *
-     * @param mixed            
+     * @param mixed $value
+     * @param string $name
+     *
+     * @return void
      */
     public function setAttribute($name, $value)
     {
-      $this->options[$name] = $value;
+        $this->options[$name] = $value;
     }
 
     /**
      * Returns the base tree component.
+     * @return string
      */
     public function getBaseComponent()
     {

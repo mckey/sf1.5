@@ -41,7 +41,7 @@ class Doctrine_Import_Mssql extends Doctrine_Import
      */
     public function listSequences($database = null)
     {
-        $query = "SELECT name FROM sysobjects WHERE xtype = 'U'";
+        $query      = "SELECT name FROM sysobjects WHERE xtype = 'U'";
         $tableNames = $this->conn->fetchColumn($query);
 
         return array_map(array($this->conn->formatter, 'fixSequenceName'), $tableNames);
@@ -50,7 +50,7 @@ class Doctrine_Import_Mssql extends Doctrine_Import
     /**
      * lists table relations
      *
-     * Expects an array of this format to be returned with all the relationships in it where the key is 
+     * Expects an array of this format to be returned with all the relationships in it where the key is
      * the name of the foreign table, and the value is an array containing the local and foreign column
      * name
      *
@@ -63,17 +63,16 @@ class Doctrine_Import_Mssql extends Doctrine_Import
      *     )
      * )
      *
-     * @param string $table     database table name
+     * @param string $tableName     database table name
      * @return array
      */
     public function listTableRelations($tableName)
     {
         $relations = array();
-        $sql = 'SELECT o1.name as table_name, c1.name as column_name, o2.name as referenced_table_name, c2.name as referenced_column_name, s.name as constraint_name FROM sysforeignkeys fk	inner join sysobjects o1 on fk.fkeyid = o1.id inner join sysobjects o2 on fk.rkeyid = o2.id inner join syscolumns c1 on c1.id = o1.id and c1.colid = fk.fkey inner join syscolumns c2 on c2.id = o2.id and c2.colid = fk.rkey inner join sysobjects s on fk.constid = s.id AND o1.name = \'' . $tableName . '\'';
-        $results = $this->conn->fetchAssoc($sql);
-        foreach ($results as $result)
-        {
-            $result = array_change_key_case($result, CASE_LOWER);
+        $sql       = 'SELECT o1.name as table_name, c1.name as column_name, o2.name as referenced_table_name, c2.name as referenced_column_name, s.name as constraint_name FROM sysforeignkeys fk	inner join sysobjects o1 on fk.fkeyid = o1.id inner join sysobjects o2 on fk.rkeyid = o2.id inner join syscolumns c1 on c1.id = o1.id and c1.colid = fk.fkey inner join syscolumns c2 on c2.id = o2.id and c2.colid = fk.rkey inner join sysobjects s on fk.constid = s.id AND o1.name = \'' . $tableName . '\'';
+        $results   = $this->conn->fetchAssoc($sql);
+        foreach ($results as $result) {
+            $result      = array_change_key_case($result, CASE_LOWER);
             $relations[] = array('table'   => $result['referenced_table_name'],
                                  'local'   => $result['column_name'],
                                  'foreign' => $result['referenced_column_name']);
@@ -89,8 +88,8 @@ class Doctrine_Import_Mssql extends Doctrine_Import
      */
     public function listTableColumns($table)
     {
-        $sql = 'EXEC sp_primary_keys_rowset @table_name = ' . $this->conn->quoteIdentifier($table, true);
-        $result = $this->conn->fetchAssoc($sql);
+        $sql     = 'EXEC sp_primary_keys_rowset @table_name = ' . $this->conn->quoteIdentifier($table, true);
+        $result  = $this->conn->fetchAssoc($sql);
         $primary = array();
         foreach ($result as $key => $val) {
             $primary[] = $val['COLUMN_NAME'];
@@ -106,7 +105,7 @@ class Doctrine_Import_Mssql extends Doctrine_Import
             if (strstr($val['type_name'], ' ')) {
                 list($type, $identity) = explode(' ', $val['type_name']);
             } else {
-                $type = $val['type_name'];
+                $type     = $val['type_name'];
                 $identity = '';
             }
 
@@ -114,15 +113,17 @@ class Doctrine_Import_Mssql extends Doctrine_Import
                 $type .= '(' . $val['length'] . ')';
             }
 
-            $val['type'] = $type;
+            $val['type']     = $type;
             $val['identity'] = $identity;
-            $decl = $this->conn->dataDict->getPortableDeclaration($val);
+            /** @var Doctrine_DataDict_Mssql $dataDict */
+            $dataDict = $this->conn->dataDict;
+            $decl     = $dataDict->getPortableDeclaration($val);
 
-            $isIdentity = (bool) (strtoupper(trim($identity)) == 'IDENTITY');
-            $isNullable = (bool) (strtoupper(trim($val['is_nullable'])) == 'NO');
-            $isPrimary = in_array($val['column_name'], $primary);
+            $isIdentity = (strtoupper(trim($identity)) == 'IDENTITY');
+            $isNullable = (strtoupper(trim($val['is_nullable'])) == 'NO');
+            $isPrimary  = in_array($val['column_name'], $primary);
 
-            $description  = array(
+            $description = array(
                 'name'          => $val['column_name'],
                 'ntype'         => $type,
                 'type'          => $decl['type'][0],
@@ -150,7 +151,7 @@ class Doctrine_Import_Mssql extends Doctrine_Import
      */
     public function listTableIndexes($table)
     {
-
+        return array();
     }
 
     /**
@@ -205,7 +206,7 @@ class Doctrine_Import_Mssql extends Doctrine_Import
     public function listTableViews($table)
     {
         $keyName = 'INDEX_NAME';
-        $pkName = 'PK_NAME';
+        $pkName  = 'PK_NAME';
         if ($this->conn->getAttribute(Doctrine_Core::ATTR_FIELD_CASE) && ($this->conn->getAttribute(Doctrine_Core::ATTR_PORTABILITY) & Doctrine_Core::PORTABILITY_FIX_CASE)) {
             if ($this->conn->getAttribute(Doctrine_Core::ATTR_FIELD_CASE) == CASE_LOWER) {
                 $keyName = strtolower($keyName);
@@ -215,17 +216,17 @@ class Doctrine_Import_Mssql extends Doctrine_Import
                 $pkName  = strtoupper($pkName);
             }
         }
-        $table = $this->conn->quote($table, 'text');
-        $query = 'EXEC sp_statistics @table_name = ' . $this->conn->quoteIdentifier($table, true);
-        $indexes = $this->conn->fetchColumn($query, $keyName);
+        $table   = $this->conn->quote($table, 'text');
+        $query   = 'EXEC sp_statistics @table_name = ' . $this->conn->quoteIdentifier($table, true);
+        $indexes = $this->conn->fetchColumn($query, array($keyName));
 
         $query = 'EXEC sp_pkeys @table_name = ' . $this->conn->quoteIdentifier($table, true);
-        $pkAll = $this->conn->fetchColumn($query, $pkName);
+        $pkAll = $this->conn->fetchColumn($query, array($pkName));
 
         $result = array();
 
         foreach ($indexes as $index) {
-            if ( ! in_array($index, $pkAll) && $index != null) {
+            if (! in_array($index, $pkAll) && $index != null) {
                 $result[] = $this->conn->formatter->fixIndexName($index);
             }
         }

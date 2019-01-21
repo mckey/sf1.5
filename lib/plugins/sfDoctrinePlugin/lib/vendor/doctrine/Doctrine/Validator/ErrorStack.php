@@ -56,7 +56,7 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
 
     /**
      * Constructor
-     *
+     * @param string $className
      */
     public function __construct($className)
     {
@@ -66,19 +66,18 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
     /**
      * Adds an error to the stack.
      *
-     * @param string                           $invalidFieldName
+     * @param mixed $invalidFieldName
      * @param string|Doctrine_Validator_Driver $errorCode
-     * @throws Doctrine_Exception
      */
     public function add($invalidFieldName, $errorCode = 'general')
     {
         if (is_object($errorCode)) {
-            if ( ! ($errorCode instanceof Doctrine_Validator_Driver)) {
+            if (! ($errorCode instanceof Doctrine_Validator_Driver)) {
                 throw new Doctrine_Exception('Validators must be an instance of Doctrine_Validator_Driver');
             }
-            $validator = $errorCode;
+            $validator                              = $errorCode;
             $this->_validators[$invalidFieldName][] = $validator;
-            $errorCode = (string) $validator;
+            $errorCode                              = (string) $validator;
         }
 
         $this->_errors[$invalidFieldName][] = $errorCode;
@@ -87,7 +86,8 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
     /**
      * Removes all existing errors for the specified field from the stack.
      *
-     * @param string $fieldName
+     * @param scalar|null $fieldName
+     * @return void
      */
     public function remove($fieldName)
     {
@@ -102,7 +102,7 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
     /**
      * Get errors for field
      *
-     * @param string $fieldName
+     * @param scalar|null $fieldName
      * @return mixed
      */
     public function get($fieldName)
@@ -113,7 +113,7 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
     /**
      * Alias for add()
      *
-     * @param string $fieldName
+     * @param scalar|null $fieldName
      * @param string $errorCode
      * @return void
      */
@@ -125,7 +125,7 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
     /**
      * Check if a field has an error
      *
-     * @param string $fieldName
+     * @param scalar|null $fieldName
      * @return boolean
      */
     public function contains($fieldName)
@@ -140,20 +140,23 @@ class Doctrine_Validator_ErrorStack extends Doctrine_Access implements Countable
      */
     public function clear()
     {
-        $this->_errors = array();
+        $this->_errors     = array();
         $this->_validators = array();
     }
 
     /**
      * Enter description here...
      *
-     * @return ArrayIterator unknown
+     * @return ArrayIterator
      */
     public function getIterator()
     {
         return new ArrayIterator($this->_errors);
     }
 
+    /**
+     * @return array
+     */
     public function toArray()
     {
         return $this->_errors;

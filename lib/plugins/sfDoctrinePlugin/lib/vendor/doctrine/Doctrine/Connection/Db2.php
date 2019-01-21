@@ -36,21 +36,23 @@ class Doctrine_Connection_Db2 extends Doctrine_Connection_Common
      * Adds an driver-specific LIMIT clause to the query
      *
      * @param string $query         query to modify
-     * @param integer $limit        limit the number of rows
-     * @param integer $offset       start reading from given offset
+     * @param integer|false $limit        limit the number of rows
+     * @param integer|false $offset       start reading from given offset
+     * @param bool $isManip
      * @return string               the modified query
      */
     public function modifyLimitQuery($query, $limit = false, $offset = false, $isManip = false)
     {
-        if ($limit <= 0)
+        if ($limit <= 0) {
             return $query;
+        }
 
         if ($offset == 0) {
-            return $query . ' FETCH FIRST '. (int)$limit .' ROWS ONLY';
+            return $query . ' FETCH FIRST ' . (int)$limit . ' ROWS ONLY';
         } else {
             $sqlPieces = explode('from', $query);
-            $select = $sqlPieces[0];
-            $table = $sqlPieces[1];
+            $select    = $sqlPieces[0];
+            $table     = $sqlPieces[1];
 
             $col = explode('select', $select);
 

@@ -30,8 +30,11 @@
  * @link        www.doctrine-project.org
  * @since       1.0
  */
-class Doctrine_Search_Listener extends Doctrine_Record_Listener 
+class Doctrine_Search_Listener extends Doctrine_Record_Listener
 {
+    /**
+     * @var Doctrine_Search
+     */
     protected $_search;
 
     public function __construct(Doctrine_Search $search)
@@ -39,21 +42,30 @@ class Doctrine_Search_Listener extends Doctrine_Record_Listener
         $this->_search = $search;
     }
 
+    /**
+     * @return void
+     */
     public function preUpdate(Doctrine_Event $event)
     {
     }
 
+    /**
+     * @return void
+     */
     public function postUpdate(Doctrine_Event $event)
     {
-        $record = $event->getInvoker(); 
+        $record = $event->getInvoker();
 
-        $this->_search->updateIndex($record->toArray()); 
+        $this->_search->updateIndex($record->toArray());
     }
 
+    /**
+     * @return void
+     */
     public function postInsert(Doctrine_Event $event)
     {
         $record = $event->getInvoker();
-        
+
         $this->_search->updateIndex($record->toArray());
     }
 }

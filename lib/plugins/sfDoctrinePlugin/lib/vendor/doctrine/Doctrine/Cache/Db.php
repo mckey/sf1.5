@@ -37,24 +37,21 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
      * Configure Database cache driver. Specify instance of Doctrine_Connection
      * and tableName to store cache in
      *
-     * @param array $_options      an array of options
+     * @param array $options      an array of options
      */
     public function __construct($options = array())
     {
-        if ( ! isset($options['connection']) ||
+        if (! isset($options['connection']) ||
              ! ($options['connection'] instanceof Doctrine_Connection)) {
-
             throw new Doctrine_Cache_Exception('Connection option not set.');
         }
 
-        if ( ! isset($options['tableName']) ||
+        if (! isset($options['tableName']) ||
              ! is_string($options['tableName'])) {
-
-             throw new Doctrine_Cache_Exception('Table name option not set.');
+            throw new Doctrine_Cache_Exception('Table name option not set.');
         }
 
-
-        $this->_options = $options;
+        parent::__construct($options);
     }
 
     /**
@@ -85,7 +82,7 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
 
         $result = $this->getConnection()->execute($sql, array($id))->fetchAll(Doctrine_Core::FETCH_NUM);
 
-        if ( ! isset($result[0])) {
+        if (! isset($result[0])) {
             return false;
         }
 
@@ -105,7 +102,7 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
 
         $result = $this->getConnection()->fetchOne($sql, array($id));
 
-        if (isset($result[0] )) {
+        if (isset($result[0])) {
             return time();
         }
         return false;
@@ -117,8 +114,9 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
      *
      * @param string $id        cache id
      * @param string $data      data to cache
-     * @param int $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
-     * @return boolean true if no problem
+     * @param int|false $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
+     * @param bool $saveKey
+     * @return int
      */
     protected function _doSave($id, $data, $lifeTime = false, $saveKey = true)
     {
@@ -131,7 +129,7 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
             if ($lifeTime) {
                 $expire = date('Y-m-d H:i:s', time() + $lifeTime);
             } else {
-                $expire = NULL;
+                $expire = null;
             }
 
             $params = array(bin2hex(serialize($data)), $expire, $id);
@@ -143,7 +141,7 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
             if ($lifeTime) {
                 $expire = date('Y-m-d H:i:s', time() + $lifeTime);
             } else {
-                $expire = NULL;
+                $expire = null;
             }
 
             $params = array($id, bin2hex(serialize($data)), $expire);
@@ -157,7 +155,7 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
      * drivers and used in Doctrine_Cache_Driver::delete()
      *
      * @param string $id cache id
-     * @return boolean true if no problem
+     * @return int
      */
     protected function _doDelete($id)
     {
@@ -180,10 +178,10 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
                 'length' => 255
             ),
             'data' => array(
-                'type'    => 'blob'
+                'type' => 'blob'
             ),
             'expire' => array(
-                'type'    => 'timestamp'
+                'type' => 'timestamp'
             )
         );
 
@@ -199,19 +197,19 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
      * it is returned as is.
      *
      * @param string $hex
-     * @return string $binary
+     * @return string|null $binary
      */
     protected function _hex2bin($hex)
     {
-        if ( ! is_string($hex)) {
+        if (! is_string($hex)) {
             return null;
         }
 
-        if ( ! ctype_xdigit($hex)) {
+        if (! ctype_xdigit($hex)) {
             return $hex;
         }
 
-        return pack("H*", $hex);
+        return pack('H*', $hex);
     }
 
     /**
@@ -221,8 +219,8 @@ class Doctrine_Cache_Db extends Doctrine_Cache_Driver
      */
     protected function _getCacheKeys()
     {
-        $sql = 'SELECT id FROM ' . $this->_options['tableName'];
-        $keys = array();
+        $sql     = 'SELECT id FROM ' . $this->_options['tableName'];
+        $keys    = array();
         $results = $this->getConnection()->execute($sql)->fetchAll(Doctrine_Core::FETCH_NUM);
         for ($i = 0, $count = count($results); $i < $count; $i++) {
             $keys[] = $results[$i][0];

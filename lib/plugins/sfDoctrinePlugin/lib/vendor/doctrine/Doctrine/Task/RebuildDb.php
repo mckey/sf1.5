@@ -32,16 +32,46 @@
  */
 class Doctrine_Task_RebuildDb extends Doctrine_Task
 {
-    public $description          =   'Drops and re-creates databases',
-           $requiredArguments    =   array(),
-           $optionalArguments    =   array();
-    
+    /**
+     * @var string
+     */
+    public $description = 'Drops and re-creates databases';
+
+    /**
+     * @var array
+     */
+    public $requiredArguments = array();
+
+    /**
+     * @var array
+     */
+    public $optionalArguments = array();
+
+    // These were undefined, added for static analysis and set to public so api isn't changed
+    /**
+     * @var Doctrine_Task_CreateDb
+     */
+    public $createDb;
+
+    /**
+     * @var Doctrine_Task_CreateTables
+     */
+    public $createTables;
+
+    /**
+     * @var Doctrine_Task_DropDb
+     */
+    public $dropDb;
+
+    /**
+     * @param Doctrine_Cli $dispatcher
+     */
     public function __construct($dispatcher = null)
     {
         parent::__construct($dispatcher);
-        
-        $this->dropDb = new Doctrine_Task_DropDb($this->dispatcher);
-        $this->createDb = new Doctrine_Task_CreateDb($this->dispatcher);
+
+        $this->dropDb       = new Doctrine_Task_DropDb($this->dispatcher);
+        $this->createDb     = new Doctrine_Task_CreateDb($this->dispatcher);
         $this->createTables = new Doctrine_Task_CreateTables($this->dispatcher);
 
         $this->requiredArguments = array_merge($this->requiredArguments, $this->dropDb->requiredArguments, $this->createDb->requiredArguments, $this->createTables->requiredArguments);

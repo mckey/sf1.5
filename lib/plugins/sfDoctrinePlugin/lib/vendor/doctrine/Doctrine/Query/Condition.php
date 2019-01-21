@@ -42,13 +42,13 @@ abstract class Doctrine_Query_Condition extends Doctrine_Query_Part
     public function parse($str)
     {
         $tmp = trim($str);
-        
+
         $parts = $this->_tokenizer->bracketExplode($str, array(' OR '), '(', ')');
-        
+
         if (count($parts) > 1) {
             $ret = array();
             foreach ($parts as $part) {
-                $part = $this->_tokenizer->bracketTrim($part, '(', ')');
+                $part  = $this->_tokenizer->bracketTrim($part, '(', ')');
                 $ret[] = $this->parse($part);
             }
             $r = implode(' OR ', $ret);
@@ -63,38 +63,38 @@ abstract class Doctrine_Query_Condition extends Doctrine_Query_Part
 
                 if (count($test) == 3 && strtoupper($test[1]) == 'BETWEEN') {
                     $tmp[] = $parts[$i] . ' AND ' . $parts[++$i];
-                } else if (count($test) == 4 && strtoupper($test[1]) == 'NOT' && strtoupper($test[2]) == 'BETWEEN') {
+                } elseif (count($test) == 4 && strtoupper($test[1]) == 'NOT' && strtoupper($test[2]) == 'BETWEEN') {
                     $tmp[] = $parts[$i] . ' AND ' . $parts[++$i];
                 } else {
                     $tmp[] = $parts[$i];
                 }
             }
-            
+
             $parts = $tmp;
             unset($tmp);
 
             if (count($parts) > 1) {
                 $ret = array();
                 foreach ($parts as $part) {
-                    $part = $this->_tokenizer->bracketTrim($part, '(', ')');
+                    $part  = $this->_tokenizer->bracketTrim($part, '(', ')');
                     $ret[] = $this->parse($part);
                 }
                 $r = implode(' AND ', $ret);
             } else {
                 // Fix for #710
-                if (substr($parts[0],0,1) == '(' && substr($parts[0], -1) == ')') {
+                if (substr($parts[0], 0, 1) == '(' && substr($parts[0], -1) == ')') {
                     return $this->parse(substr($parts[0], 1, -1));
                 } else {
                     // Processing NOT here
-                    if (strtoupper(substr($parts[0], 0, 4)) === 'NOT ') {
-                        $r = 'NOT ('.$this->parse(substr($parts[0], 4)).')';
+                    if (strtoupper(substr($parts[0], 0, 4)) === 'NOT ' && strtoupper(substr($parts[0], 4, 6)) !== 'EXISTS') {
+                        $r = 'NOT (' . $this->parse(substr($parts[0], 4)) . ')';
                     } else {
                         return $this->load($parts[0]);
                     }
                 }
             }
         }
-        
+
         return '(' . $r . ')';
     }
 
@@ -105,7 +105,7 @@ abstract class Doctrine_Query_Condition extends Doctrine_Query_Part
      * components are parsed to associated table aliases
      *
      * @param string $value         literal value to be parsed
-     * @return string
+     * @return string|int
      */
     public function parseLiteralValue($value)
     {
@@ -115,17 +115,17 @@ abstract class Doctrine_Query_Condition extends Doctrine_Query_Part
             $value = $this->query->getConnection()
                      ->dataDict->parseBoolean($value);
 
-            $a = explode('.', $value);
+            $a = explode('.', (string) $value);
 
             if (count($a) > 1) {
-            // either a float or a component..
+                // either a float or a component..
 
-                if ( ! is_numeric($a[0])) {
+                if (! is_numeric($a[0])) {
                     // a component found
                     $field     = array_pop($a);
-                	$reference = implode('.', $a);
+                    $reference = implode('.', $a);
                     $value     = $this->query->getConnection()->quoteIdentifier(
-                        $this->query->getSqlTableAlias($reference). '.' . $field
+                        $this->query->getSqlTableAlias($reference) . '.' . $field
                     );
                 }
             }

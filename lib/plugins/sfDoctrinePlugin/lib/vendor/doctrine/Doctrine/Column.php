@@ -37,8 +37,8 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
      * @var array $_definition  @see getDefinition()
      */
     protected $_definition = array(
-                                'type'    => null,
-                                'length'  => 0,
+                                'type'   => null,
+                                'length' => 0,
                                 );
 
     /**
@@ -52,7 +52,7 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
     /**
      * Returns the definition of the column.
      *
-     * Keys can be: 
+     * Keys can be:
      *     string type,
      *     integer length,
      *     array values (only for enum fields, maps integer indexes to mixed values),
@@ -68,7 +68,7 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
      *
      * @return boolean
      */
-    public function contains($name) 
+    public function contains($name)
     {
         return isset($this->_definition[$name]);
     }
@@ -81,10 +81,10 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
      */
     public function get($name)
     {
-        if ( ! isset($this->_definition[$name])) {
+        if (! isset($this->_definition[$name])) {
             return null;
         }
-        
+
         return $this->_definition[$name];
     }
 
@@ -100,7 +100,6 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
     }
 
     /**
-     * @param string $field
      * @return array
      */
     public function getEnumValues()
@@ -115,8 +114,8 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
     /**
      * Retrieves an enum value.
      *
-     * @param integer $index
-     * @return string       integer ($index) if not present
+     * @param integer|Doctrine_Null $index
+     * @return string|false       integer ($index) if not present
      */
     public function enumValue($index)
     {
@@ -136,7 +135,7 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
      */
     public function enumIndex($field, $value)
     {
-        $values = $this->getEnumValues($field);
+        $values = $this->getEnumValues();
 
         return array_search($value, $values);
     }
@@ -156,7 +155,7 @@ class Doctrine_Column extends Doctrine_Access implements IteratorAggregate, Coun
      *
      * @return ArrayIterator
      */
-    public function getIterator() 
+    public function getIterator()
     {
         return new ArrayIterator($this->_definition);
     }

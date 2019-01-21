@@ -34,7 +34,7 @@
 abstract class Doctrine_Template extends Doctrine_Record_Abstract
 {
     /**
-     * @var Doctrine_Record $_invoker     the record that invoked the last delegated call
+     * @var Doctrine_Record_Abstract $_invoker     the record that invoked the last delegated call
      */
     protected $_invoker;
 
@@ -51,7 +51,7 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
     /**
      * __construct
      *
-     * @param string $array 
+     * @param array $options
      * @return void
      */
     public function __construct(array $options = array())
@@ -63,6 +63,8 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
      * Set the table object that this Template belongs to
      *
      * @var Doctrine_Table $table        the table object this Template belongs to
+     *
+     * @return void
      */
     public function setTable(Doctrine_Table $table)
     {
@@ -82,8 +84,8 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
     /**
      * sets the last used invoker
      *
-     * @param Doctrine_Record $invoker      the record that invoked the last delegated call
-     * @return Doctrine_Template            this object
+     * @param Doctrine_Record_Abstract $invoker      the record that invoked the last delegated call
+     * @return void
      */
     public function setInvoker(Doctrine_Record_Abstract $invoker)
     {
@@ -93,7 +95,7 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
     /**
      * returns the last used invoker
      *
-     * @return Doctrine_Record              the record that invoked the last delegated call
+     * @return Doctrine_Record_Abstract              the record that invoked the last delegated call
      */
     public function getInvoker()
     {
@@ -102,21 +104,21 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
 
     /**
      * Adds a plugin as a child to this plugin
-     * 
-     * @param Doctrine_Template $template 
-     * @return Doctrine_Template. Chainable.
+     *
+     * @param Doctrine_Template $template
+     * @return $this Chainable.
      */
     public function addChild(Doctrine_Template $template)
     {
         $this->_plugin->addChild($template);
-        
+
         return $this;
     }
 
     /**
-     * Get plugin instance 
-     * 
-     * @return void
+     * Get plugin instance
+     *
+     * @return Doctrine_Record_Generator
      */
     public function getPlugin()
     {
@@ -161,21 +163,21 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
     }
 
     /**
-     * get 
-     * 
-     * @param mixed $name 
+     * get
+     *
+     * @param mixed $name
      * @return void
      */
-    public function get($name) 
+    public function get($name)
     {
         throw new Doctrine_Exception("Templates doesn't support accessors.");
     }
 
     /**
-     * set 
-     * 
-     * @param mixed $name 
-     * @param mixed $value 
+     * set
+     *
+     * @param mixed $name
+     * @param mixed $value
      * @return void
      */
     public function set($name, $value)
@@ -184,22 +186,20 @@ abstract class Doctrine_Template extends Doctrine_Record_Abstract
     }
 
     /**
-     * Blank method for template setup 
-     * 
+     * Blank method for template setup
+     *
      * @return void
      */
     public function setUp()
     {
-
     }
 
     /**
      * Blank method for template table definition
-     * 
+     *
      * @return void
      */
     public function setTableDefinition()
     {
-
     }
 }

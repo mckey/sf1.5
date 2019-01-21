@@ -32,11 +32,19 @@
  */
 class Doctrine_Expression_Driver extends Doctrine_Connection_Module
 {
+    /**
+     * @param  string|int $column
+     * @return string|int
+     */
     public function getIdentifier($column)
     {
         return $column;
     }
 
+    /**
+     * @param  array $columns
+     * @return array
+     */
     public function getIdentifiers($columns)
     {
         return $columns;
@@ -62,7 +70,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     public function avg($column)
     {
         $column = $this->getIdentifier($column);
-        return 'AVG(' .  $column . ')';
+        return 'AVG(' . $column . ')';
     }
 
     /**
@@ -123,6 +131,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      *
      * Note: Not SQL92, but common functionality
      *
+     * @param string $column
      * @return string
      */
     public function md5($column)
@@ -134,8 +143,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     /**
      * Returns the length of a text field.
      *
-     * @param string $expression1
-     * @param string $expression2
+     * @param string $column
      * @return string
      */
     public function length($column)
@@ -147,8 +155,8 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     /**
      * Rounds a numeric field to the number of decimals specified.
      *
-     * @param string $expression1
-     * @param string $expression2
+     * @param string $column
+     * @param int    $decimals
      * @return string
      */
     public function round($column, $decimals = 0)
@@ -241,7 +249,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      *
      * @param string $substr    literal string to find
      * @param string $str       literal string
-     * @return integer
+     * @return string
      */
     public function locate($str, $substr)
     {
@@ -281,16 +289,16 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * SQLite only supports the 2 parameter variant of this function
      *
      * @param string $value         an sql string literal or column name/alias
-     * @param integer $position     where to start the substring portion
-     * @param integer $length       the substring portion length
+     * @param integer $from     where to start the substring portion
+     * @param integer $len       the substring portion length
      * @return string               SQL substring function with given parameters
      */
     public function substring($value, $from, $len = null)
     {
         $value = $this->getIdentifier($value);
-        if ($len === null)
+        if ($len === null) {
             return 'SUBSTRING(' . $value . ' FROM ' . $from . ')';
-        else {
+        } else {
             $len = $this->getIdentifier($len);
             return 'SUBSTRING(' . $value . ' FROM ' . $from . ' FOR ' . $len . ')';
         }
@@ -302,18 +310,18 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * concat() accepts an arbitrary number of parameters. Each parameter
      * must contain an expression or an array with expressions.
      *
-     * @param string|array(string) strings that will be concatinated.
+     * @param string ...$args strings that will be concatinated.
+     *
+     * @return string
      */
-    public function concat()
+    public function concat(...$args)
     {
-        $args = func_get_args();
-
-        return 'CONCAT(' . join(', ', (array) $args) . ')';
+        return 'CONCAT(' . join(', ', $args) . ')';
     }
 
     /**
      * Returns the SQL for a logical not.
-     *
+     * @param string $expression
      * @return string a logical expression
      */
     public function not($expression)
@@ -331,7 +339,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * expressions.
      *
      * @param string $type the type of operation, can be '+', '-', '*' or '/'.
-     * @param string|array(string)
+     * @param array $args
      * @return string an expression
      */
     private function basicMath($type, array $args)
@@ -354,7 +362,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * must contain a value or an expression or an array with values or
      * expressions.
      *
-     * @param string|array(string)
+     * @param array $args
      * @return string an expression
      */
     public function add(array $args)
@@ -369,12 +377,12 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * must contain a value or an expression or an array with values or
      * expressions.
      *
-     * @param string|array(string)
+     * @param array $args
      * @return string an expression
      */
     public function sub(array $args)
     {
-        return $this->basicMath('-', $args );
+        return $this->basicMath('-', $args);
     }
 
     /**
@@ -384,7 +392,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * must contain a value or an expression or an array with values or
      * expressions.
      *
-     * @param string|array(string)
+     * @param array $args
      * @return string an expression
      */
     public function mul(array $args)
@@ -399,7 +407,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * must contain a value or an expression or an array with values or
      * expressions.
      *
-     * @param string|array(string)
+     * @param array $args
      * @return string an expression
      */
     public function div(array $args)
@@ -503,12 +511,12 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
      * These expressions will be matched against the first parameter.
      *
      * @param string $column        the value that should be matched against
-     * @param string|array(string)  values that will be matched against $column
+     * @param string|string[] $values  values that will be matched against $column
      * @return string logical expression
      */
     public function in($column, $values)
     {
-        if ( ! is_array($values)) {
+        if (! is_array($values)) {
             $values = array($values);
         }
         $values = $this->getIdentifiers($values);
@@ -562,9 +570,9 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     public function between($expression, $value1, $value2)
     {
         $expression = $this->getIdentifier($expression);
-        $value1 = $this->getIdentifier($value1);
-        $value2 = $this->getIdentifier($value2);
-        return $expression . ' BETWEEN ' .$value1 . ' AND ' . $value2;
+        $value1     = $this->getIdentifier($value1);
+        $value2     = $this->getIdentifier($value2);
+        return $expression . ' BETWEEN ' . $value1 . ' AND ' . $value2;
     }
 
     /**
@@ -579,7 +587,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
 
     /**
      * returns arcus cosine SQL string
-     *
+     * @param string $value
      * @return string
      */
     public function acos($value)
@@ -590,8 +598,8 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     /**
      * sin
      *
-     * @param string $value 
-     * @return void
+     * @param string $value
+     * @return string
      */
     public function sin($value)
     {
@@ -601,7 +609,7 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     /**
      * pi
      *
-     * @return void
+     * @return string
      */
     public function pi()
     {
@@ -611,8 +619,8 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     /**
      * cos
      *
-     * @param string $value 
-     * @return void
+     * @param string $value
+     * @return string
      */
     public function cos($value)
     {
@@ -628,15 +636,17 @@ class Doctrine_Expression_Driver extends Doctrine_Connection_Module
     {
         $args = func_get_args();
 
-	    return 'COALESCE(' . join(', ', (array) $args) . ')';
+        return 'COALESCE(' . join(', ', (array) $args) . ')';
     }
 
     /**
      * __call
      *
      * for all native RDBMS functions the function name itself is returned
+     * @param string $m
+     * @param array $a
      */
-    public function __call($m, $a) 
+    public function __call($m, $a)
     {
         if ($this->conn->getAttribute(Doctrine_Core::ATTR_PORTABILITY) & Doctrine_Core::PORTABILITY_EXPR) {
             throw new Doctrine_Expression_Exception('Unknown expression: ' . $m);

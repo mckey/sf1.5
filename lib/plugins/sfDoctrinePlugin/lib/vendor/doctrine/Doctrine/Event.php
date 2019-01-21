@@ -29,22 +29,28 @@
  * @link        www.doctrine-project.org
  * @since       1.0
  * @version     $Revision$
+ * @property bool $skipOperation
+ * @property int $fetchMode
+ * @property int $cursorOrientation
+ * @property int $cursorOffset
+ * @property int $columnIndex
+ * @property mixed $data
  */
 class Doctrine_Event
 {
     /**
      * CONNECTION EVENT CODES
      */
-    const CONN_QUERY         = 1;
-    const CONN_EXEC          = 2;
-    const CONN_PREPARE       = 3;
-    const CONN_CONNECT       = 4;
-    const CONN_CLOSE         = 5;
-    const CONN_ERROR         = 6;
+    const CONN_QUERY   = 1;
+    const CONN_EXEC    = 2;
+    const CONN_PREPARE = 3;
+    const CONN_CONNECT = 4;
+    const CONN_CLOSE   = 5;
+    const CONN_ERROR   = 6;
 
-    const STMT_EXECUTE       = 10;
-    const STMT_FETCH         = 11;
-    const STMT_FETCHALL      = 12;
+    const STMT_EXECUTE  = 10;
+    const STMT_FETCH    = 11;
+    const STMT_FETCHALL = 12;
 
     const TX_BEGIN           = 31;
     const TX_COMMIT          = 32;
@@ -53,7 +59,7 @@ class Doctrine_Event
     const SAVEPOINT_ROLLBACK = 35;
     const SAVEPOINT_COMMIT   = 36;
 
-    const HYDRATE            = 40;
+    const HYDRATE = 40;
 
     /*
      * RECORD EVENT CODES
@@ -72,7 +78,7 @@ class Doctrine_Event
     /**
      * @var mixed $_nextSequence        the sequence of the next event that will be created
      */
-    static protected $_nextSequence = 0;
+    protected static $_nextSequence = 0;
 
     /**
      * @var mixed $_sequence            the sequence of this event
@@ -85,12 +91,12 @@ class Doctrine_Event
     protected $_invoker;
 
     /**
-     * @var string $_query              the sql query associated with this event (if any)
+     * @var string|Doctrine_Query_Abstract|null $_query              the sql query associated with this event (if any)
      */
     protected $_query;
 
     /**
-     * @var string $_params             the parameters associated with the query (if any)
+     * @var array $_params             the parameters associated with the query (if any)
      */
     protected $_params;
 
@@ -106,7 +112,7 @@ class Doctrine_Event
     protected $_startedMicrotime;
 
     /**
-     * @var integer $_endedMicrotime    the time point in which this event was ended
+     * @var integer|null $_endedMicrotime    the time point in which this event was ended
      */
     protected $_endedMicrotime;
 
@@ -118,10 +124,10 @@ class Doctrine_Event
     /**
      * constructor
      *
-     * @param Doctrine_Connection|Doctrine_Connection_Statement|
-              Doctrine_Connection_UnitOfWork|Doctrine_Transaction $invoker   the handler which invoked this event
+     * @param Doctrine_Connection|Doctrine_Connection_Statement|Doctrine_Connection_UnitOfWork|Doctrine_Transaction|Doctrine_Record|null $invoker   the handler which invoked this event
      * @param integer $code                                                  the event code
-     * @param string $query                                                  the sql query associated with this event (if any)
+     * @param string|Doctrine_Query_Abstract $query                                                  the sql query associated with this event (if any)
+     * @param array $params
      */
     public function __construct($invoker, $code, $query = null, $params = array())
     {
@@ -135,7 +141,7 @@ class Doctrine_Event
     /**
      * getQuery
      *
-     * @return Doctrine_Query       returns the query associated with this event (if any)
+     * @return string|Doctrine_Query_Abstract|null       returns the query associated with this event (if any)
      */
     public function getQuery()
     {
@@ -146,7 +152,7 @@ class Doctrine_Event
      * getName
      * returns the name of this event
      *
-     * @return string       the name of this event
+     * @return string|null       the name of this event
      */
     public function getName()
     {
@@ -227,7 +233,7 @@ class Doctrine_Event
      */
     public function __get($option)
     {
-        if ( ! isset($this->_options[$option])) {
+        if (! isset($this->_options[$option])) {
             return null;
         }
 
@@ -239,7 +245,7 @@ class Doctrine_Event
      * skips the next operation
      * an alias for __set('skipOperation', true)
      *
-     * @return Doctrine_Event   this object
+     * @return $this   this object
      */
     public function skipOperation()
     {
@@ -254,7 +260,7 @@ class Doctrine_Event
      *
      * @param string $option    the name of the option
      * @param mixed $value      the value of the given option
-     * @return Doctrine_Event   this object
+     * @return $this   this object
      */
     public function __set($option, $value)
     {
@@ -269,11 +275,11 @@ class Doctrine_Event
      *
      * @param string $option    the name of the option
      * @param mixed $value      the value of the given option
-     * @return Doctrine_Event   this object
+     * @return $this   this object
      */
     public function set($option, &$value)
     {
-        $this->_options[$option] =& $value;
+        $this->_options[$option] = & $value;
 
         return $this;
     }
@@ -282,7 +288,7 @@ class Doctrine_Event
      * start
      * starts the internal timer of this event
      *
-     * @return Doctrine_Event   this object
+     * @return void
      */
     public function start()
     {
@@ -304,7 +310,7 @@ class Doctrine_Event
      * end
      * ends the internal timer of this event
      *
-     * @return Doctrine_Event   this object
+     * @return $this   this object
      */
     public function end()
     {
@@ -328,8 +334,7 @@ class Doctrine_Event
      * getInvoker
      * returns the handler that invoked this event
      *
-     * @return Doctrine_Record|Doctrine_Connection|Doctrine_Connection_Statement|
-     *                       Doctrine_Connection_UnitOfWork|Doctrine_Transaction   the handler that invoked this event
+     * @return mixed   the handler that invoked this event
      */
     public function getInvoker()
     {
@@ -363,7 +368,7 @@ class Doctrine_Event
      * Get the elapsed time (in microseconds) that the event ran.  If the event has
      * not yet ended, return false.
      *
-     * @return integer
+     * @return integer|false
      */
     public function getElapsedSecs()
     {

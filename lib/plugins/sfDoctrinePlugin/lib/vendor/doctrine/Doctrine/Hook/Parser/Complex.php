@@ -32,8 +32,11 @@
  */
 abstract class Doctrine_Hook_Parser_Complex extends Doctrine_Hook_Parser
 {
+    /**
+     * @var Doctrine_Query_Tokenizer
+     */
     protected $_tokenizer;
-    
+
     /**
      * Constructor.
      */
@@ -41,7 +44,7 @@ abstract class Doctrine_Hook_Parser_Complex extends Doctrine_Hook_Parser
     {
         $this->_tokenizer = new Doctrine_Query_Tokenizer();
     }
-    
+
     /**
      * parse
      * Parses given field and field value to DQL condition
@@ -65,7 +68,7 @@ abstract class Doctrine_Hook_Parser_Complex extends Doctrine_Hook_Parser
      * @param string $alias     component alias
      * @param string $field     the field name
      * @param mixed $value      the value of the field
-     * @return void
+     * @return string
      */
     public function parseClause($alias, $field, $value)
     {
@@ -101,7 +104,7 @@ abstract class Doctrine_Hook_Parser_Complex extends Doctrine_Hook_Parser
      * @param string $alias     component alias
      * @param string $field     the field name
      * @param mixed $value      the value of the field
-     * @return void
+     * @return string
      */
     abstract public function parseSingle($alias, $field, $value);
 }
