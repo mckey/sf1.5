@@ -48,7 +48,7 @@ class Doctrine_Expression_Sqlite extends Doctrine_Expression_Driver
      *
      * @param integer $dividend
      * @param integer $divisor
-     * @return string
+     * @return int
      */
     public static function modImpl($dividend, $divisor)
     {
@@ -73,32 +73,52 @@ class Doctrine_Expression_Sqlite extends Doctrine_Expression_Driver
      *
      * @param string $substr    literal string to find
      * @param string $str       literal string
-     * @return string
+     * @return int|false
      */
     public static function locateImpl($substr, $str)
     {
         return strpos($str, $substr);
     }
 
+    /**
+     * @param string $str
+     * @return string
+     */
     public static function sha1Impl($str)
     {
         return sha1($str);
     }
 
+    /**
+     * @param string $str
+     * @return string
+     */
     public static function ltrimImpl($str)
     {
         return ltrim($str);
     }
 
+    /**
+     * @param string $str
+     * @return string
+     */
     public static function rtrimImpl($str)
     {
         return rtrim($str);
     }
 
+    /**
+     * @param string $str
+     * @return string
+     */
     public static function trimImpl($str)
     {
         return trim($str);
     }
+
+    /**
+     * @return string
+     */
     public static function nowImpl()
     {
         return date('Y-m-d h:i:s');
@@ -133,6 +153,7 @@ class Doctrine_Expression_Sqlite extends Doctrine_Expression_Driver
      * Return string to call a variable with the current timestamp inside an SQL statement
      * There are three special variables for current date and time.
      *
+     * @param string $type
      * @return string       sqlite function as string
      */
     public function now($type = 'timestamp')

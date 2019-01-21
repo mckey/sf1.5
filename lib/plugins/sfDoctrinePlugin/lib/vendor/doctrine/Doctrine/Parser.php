@@ -38,20 +38,20 @@ abstract class Doctrine_Parser
      * Override in the parser driver
      *
      * @param string $array
-     * @return void
+     * @return mixed
      * @author Jonathan H. Wage
      */
-    abstract public function loadData($array, $charset = 'UTF-8');
+    abstract public function loadData($array);
 
     /**
      * dumpData
      *
      * Override in the parser driver
      *
-     * @param string $array
+     * @param array $array
      * @param string $path
      * @param string $charset The charset of the data being dumped
-     * @return void
+     * @return int|false|string
      * @author Jonathan H. Wage
      */
     abstract public function dumpData($array, $path = null, $charset = null);
@@ -62,12 +62,12 @@ abstract class Doctrine_Parser
      * Get instance of the specified parser
      *
      * @param string $type
-     * @return void
+     * @return Doctrine_Parser
      * @author Jonathan H. Wage
      */
-    static public function getParser($type)
+    public static function getParser($type)
     {
-        $class = 'Doctrine_Parser_'.ucfirst($type);
+        $class = 'Doctrine_Parser_' . ucfirst($type);
 
         return new $class;
     }
@@ -79,14 +79,14 @@ abstract class Doctrine_Parser
      *
      * @param string $path
      * @param string $type
-     * @return void
+     * @return array
      * @author Jonathan H. Wage
      */
-    static public function load($path, $type = 'xml', $charset = 'UTF-8')
+    public static function load($path, $type = 'xml')
     {
         $parser = self::getParser($type);
 
-        return (array) $parser->loadData($path, $charset);
+        return (array) $parser->loadData($path);
     }
 
     /**
@@ -94,14 +94,14 @@ abstract class Doctrine_Parser
      *
      * Interface for pulling and dumping data to a file
      *
-     * @param string $array
+     * @param array $array
      * @param string $path
      * @param string $type
      * @param string $charset The charset of the data being dumped
-     * @return void
+     * @return int|false|string
      * @author Jonathan H. Wage
      */
-    static public function dump($array, $type = 'xml', $path = null, $charset = null)
+    public static function dump($array, $type = 'xml', $path = null, $charset = null)
     {
         $parser = self::getParser($type);
 
@@ -115,14 +115,14 @@ abstract class Doctrine_Parser
      * Either should allow php code in it.
      *
      * @param string $path
-     * @return void
+     * @return string
      */
     public function doLoad($path)
     {
         ob_start();
-        if ( ! file_exists($path)) {
+        if (! file_exists($path)) {
             $contents = $path;
-            $path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'dparser_' . microtime();
+            $path     = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'dparser_' . microtime();
 
             file_put_contents($path, $contents);
         }
@@ -140,11 +140,11 @@ abstract class Doctrine_Parser
      *
      * @param string $data
      * @param string $path
-     * @return void
+     * @return int|false|string
      */
     public function doDump($data, $path = null)
     {
-      if ($path !== null) {
+        if ($path !== null) {
             return file_put_contents($path, $data);
         } else {
             return $data;

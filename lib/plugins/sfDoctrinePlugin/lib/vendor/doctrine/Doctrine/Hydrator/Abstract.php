@@ -32,12 +32,31 @@
  */
 abstract class Doctrine_Hydrator_Abstract extends Doctrine_Locator_Injectable
 {
-    protected
-        $_queryComponents = array(),
-        $_tableAliases = array(),
-        $_priorRow,
-        $_hydrationMode;
+    /**
+     * @var array
+     */
+    protected $_queryComponents = array();
 
+    /**
+     * @var array
+     */
+    protected $_tableAliases = array();
+
+    /**
+     * @var null|array
+     */
+    protected $_priorRow;
+
+    /**
+     * @var int
+     */
+    protected $_hydrationMode;
+
+    /**
+     * @param array $queryComponents
+     * @param array $tableAliases
+     * @param int $hydrationMode
+     */
     public function __construct($queryComponents = null, $tableAliases = null, $hydrationMode = null)
     {
         $this->setQueryComponents($queryComponents);
@@ -80,12 +99,18 @@ abstract class Doctrine_Hydrator_Abstract extends Doctrine_Locator_Injectable
         $this->_hydrationMode = $hydrationMode;
     }
 
+    /**
+     * @return Doctrine_Table
+     */
     public function getRootComponent()
     {
         $queryComponents = array_values($this->_queryComponents);
         return $queryComponents[0]['table'];
     }
 
+    /**
+     * @return void
+     */
     public function onDemandReset()
     {
         $this->_priorRow = null;

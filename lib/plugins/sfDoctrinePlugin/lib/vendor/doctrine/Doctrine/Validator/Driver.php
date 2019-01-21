@@ -36,7 +36,15 @@ class Doctrine_Validator_Driver
      * @var array $_args     an array of plugin specific args
      */
     public $args;
+
+    /**
+     * @var Doctrine_Record
+     */
     public $invoker;
+
+    /**
+     * @var string|array
+     */
     public $field;
 
     /**
@@ -66,43 +74,43 @@ class Doctrine_Validator_Driver
     /**
      * sets given value to an argument
      *
-     * @param $arg          the name of the option to be changed
-     * @param $value        the value of the option
-     * @return Doctrine_Validator_Driver    this object
+     * @param string $arg          the name of the option to be changed
+     * @param mixed $value        the value of the option
+     * @return $this    this object
      */
     public function __set($arg, $value)
     {
         $this->args[$arg] = $value;
-        
+
         return $this;
     }
 
     /**
      * returns the value of an argument
      *
-     * @param $arg          the name of the option to retrieve
+     * @param string $arg          the name of the option to retrieve
      * @return mixed        the value of the option
      */
     public function getArg($arg)
     {
-        if ( ! isset($this->args[$arg])) {
-            throw new Doctrine_Validator_Exception('Unknown option ' . $arg);
+        if (! isset($this->args[$arg])) {
+            throw new Doctrine_Validator_Exception(array('Unknown option ' . $arg));
         }
-        
+
         return $this->args[$arg];
     }
 
     /**
      * sets given value to an argument
      *
-     * @param $arg          the name of the option to be changed
-     * @param $value        the value of the option
-     * @return Doctrine_Validator_Driver    this object
+     * @param string $arg          the name of the option to be changed
+     * @param mixed $value        the value of the option
+     * @return $this    this object
      */
     public function setArg($arg, $value)
     {
         $this->args[$arg] = $value;
-        
+
         return $this;
     }
 
@@ -119,7 +127,7 @@ class Doctrine_Validator_Driver
     public function __toString()
     {
         $className = get_class($this);
-        if (strpos($className, 'Doctrine_Validator_') === 0) { 
+        if (strpos($className, 'Doctrine_Validator_') === 0) {
             return strtolower(substr($className, 19));
         } else {
             return $className;

@@ -35,7 +35,7 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
     /**
      * @param array $listeners      an array containing all availible listeners
      */
-    private $listeners  = array('query',
+    private $listeners = array('query',
                                 'prepare',
                                 'commit',
                                 'rollback',
@@ -47,7 +47,7 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
     /**
      * @param array $events         an array containing all listened events
      */
-    private $events     = array();
+    private $events = array();
 
     /**
      * @param array $eventSequences         an array containing sequences of all listened events as keys
@@ -57,19 +57,18 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
     /**
      * constructor
      */
-    public function __construct() {
-
+    public function __construct()
+    {
     }
 
     /**
      * setFilterQueryType
      *
-     * @param integer $filter
-     * @return boolean
+     * @return void
      */
-    public function setFilterQueryType() {
-                                             
-    }                                         
+    public function setFilterQueryType()
+    {
+    }
     /**
      * method overloader
      * this method is used for invoking different listeners, for the full
@@ -78,12 +77,12 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
      * @param string $m     the name of the method
      * @param array $a      method arguments
      * @see Doctrine_EventListener
-     * @return boolean
+     * @return void
      */
     public function __call($m, $a)
     {
         // first argument should be an instance of Doctrine_Event
-        if ( ! ($a[0] instanceof Doctrine_Event)) {
+        if (! ($a[0] instanceof Doctrine_Event)) {
             throw new Doctrine_Connection_Profiler_Exception("Couldn't listen event. Event should be an instance of Doctrine_Event.");
         }
 
@@ -93,8 +92,8 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
             $a[0]->start();
 
             $eventSequence = $a[0]->getSequence();
-            if ( ! isset($this->eventSequences[$eventSequence])) {
-                $this->events[] = $a[0];
+            if (! isset($this->eventSequences[$eventSequence])) {
+                $this->events[]                       = $a[0];
                 $this->eventSequences[$eventSequence] = true;
             }
         } else {
@@ -107,9 +106,9 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
      * get
      *
      * @param mixed $key
-     * @return Doctrine_Event
+     * @return Doctrine_Event|null
      */
-    public function get($key) 
+    public function get($key)
     {
         if (isset($this->events[$key])) {
             return $this->events[$key];
@@ -123,7 +122,7 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
      *
      * @return array        all events in an array
      */
-    public function getAll() 
+    public function getAll()
     {
         return $this->events;
     }
@@ -141,10 +140,10 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
 
     /**
      * count
-     * 
+     *
      * @return integer
      */
-    public function count() 
+    public function count()
     {
         return count($this->events);
     }
@@ -154,11 +153,10 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
      *
      * @return Doctrine_Event
      */
-    public function pop() 
+    public function pop()
     {
         $event = array_pop($this->events);
-        if ($event !== null)
-        {
+        if ($event !== null) {
             unset($this->eventSequences[$event->getSequence()]);
         }
         return $event;
@@ -168,7 +166,7 @@ class Doctrine_Connection_Profiler implements Doctrine_Overloadable, IteratorAgg
      * Get the Doctrine_Event object for the last query that was run, regardless if it has
      * ended or not. If the event has not ended, it's end time will be Null.
      *
-     * @return Doctrine_Event
+     * @return Doctrine_Event|false
      */
     public function lastEvent()
     {

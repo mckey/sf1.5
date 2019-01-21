@@ -36,18 +36,19 @@ class Doctrine_Template_SoftDelete extends Doctrine_Template
     /**
      * Array of SoftDelete options
      *
-     * @var string
+     * @var array
      */
     protected $_options = array(
-        'name'          =>  'deleted_at',
-        'type'          =>  'timestamp',
-        'length'        =>  null,
-        'options'       =>  array(
+        'name'    => 'deleted_at',
+        'type'    => 'timestamp',
+        'length'  => null,
+        'options' => array(
             'notnull' => false
         ),
         'hardDelete' => false
     );
 
+    /** @var Doctrine_Template_Listener_SoftDelete */
     protected $_listener;
 
     /**
@@ -59,10 +60,10 @@ class Doctrine_Template_SoftDelete extends Doctrine_Template
     {
         // BC to 1.0.X of SoftDelete behavior
         if ($this->_options['type'] == 'boolean') {
-            $this->_options['length'] = 1;
+            $this->_options['length']  = 1;
             $this->_options['options'] = array('default' => false, 'notnull' => true);
         }
-    
+
         $this->hasColumn($this->_options['name'], $this->_options['type'], $this->_options['length'], $this->_options['options']);
 
         $this->_listener = new Doctrine_Template_Listener_SoftDelete($this->_options);
@@ -73,7 +74,7 @@ class Doctrine_Template_SoftDelete extends Doctrine_Template
      * Add a hardDelete() method to any of the models who act as SoftDelete behavior
      *
      * @param Doctrine_Connection $conn
-     * @return integer $result Number of affected rows.
+     * @return bool
      */
     public function hardDelete($conn = null)
     {

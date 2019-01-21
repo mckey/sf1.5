@@ -78,7 +78,7 @@ abstract class Doctrine_Pager_Range
      * Defines the Doctrine_Pager object related to the pager range and
      * automatically (re-)initialize Doctrine_Pager_Range
      *
-     * @param $pager       Doctrine_Pager object related to the pager range
+     * @param Doctrine_Pager $pager       Doctrine_Pager object related to the pager range
      * @return void
      */
     public function setPager($pager)
@@ -107,7 +107,7 @@ abstract class Doctrine_Pager_Range
      * getOption
      *
      * Returns the custom Doctrine_Pager_Range implementation offset option
-     *
+     * @param string $option
      * @return array        Custom Doctrine_Pager_Range implementation options
      */
     public function getOption($option)
@@ -126,7 +126,7 @@ abstract class Doctrine_Pager_Range
      *
      * Defines the subclass implementation options
      *
-     * @param $options       Custom Doctrine_Pager_Range implementation options
+     * @param array $options       Custom Doctrine_Pager_Range implementation options
      * @return void
      */
     protected function _setOptions($options)
@@ -139,7 +139,7 @@ abstract class Doctrine_Pager_Range
      *
      * Check if a given page is in the range
      *
-     * @param $page       Page to be checked
+     * @param int $page       Page to be checked
      * @return boolean
      */
     public function isInRange($page)

@@ -33,14 +33,19 @@
 class Doctrine_Template_I18n extends Doctrine_Template
 {
     /**
+     * @var Doctrine_I18n $_plugin
+     */
+    protected $_plugin;
+
+    /**
      * __construct
      *
-     * @param string $array 
+     * @param array $options
      * @return void
      */
     public function __construct(array $options = array())
     {
-	    parent::__construct($options);
+        parent::__construct($options);
         $this->_plugin = new Doctrine_I18n($this->_options);
     }
 
@@ -51,13 +56,13 @@ class Doctrine_Template_I18n extends Doctrine_Template
      */
     public function setUp()
     {
-        $this->_plugin->initialize($this->_table); 
+        $this->_plugin->initialize($this->_table);
     }
 
     /**
      * Get the plugin instance for the I18n template
      *
-     * @return void
+     * @return Doctrine_I18n
      */
     public function getI18n()
     {

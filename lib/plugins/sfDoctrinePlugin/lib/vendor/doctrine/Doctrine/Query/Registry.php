@@ -32,51 +32,69 @@
  */
 class Doctrine_Query_Registry
 {
+    /**
+     * @var array
+     */
     protected $_queries = array();
 
+    /**
+     * @param string $key
+     * @param Doctrine_Query|string $query
+     * @return void
+     */
     public function add($key, $query)
     {
         if ($query instanceof Doctrine_Query) {
             $query = clone $query;
         }
 
-    	if (strpos($key, '/') === false) {
+        if (strpos($key, '/') === false) {
             $this->_queries[$key] = $query;
         } else {
             // namespace found
-            
+
             $e = explode('/', $key);
 
             $this->_queries[$e[0]][$e[1]] = $query;
         }
     }
-    
+
+    /**
+     * @param  string $key
+     * @param  string $namespace
+     * @return Doctrine_Query
+     */
     public function get($key, $namespace = null)
     {
         if (isset($namespace)) {
-            if ( ! isset($this->_queries[$namespace][$key])) {
+            if (! isset($this->_queries[$namespace][$key])) {
                 throw new Doctrine_Query_Registry_Exception('A query with the name ' . $namespace . '/' . $key . ' does not exist.');
             }
             $query = $this->_queries[$namespace][$key];
         } else {
-            if ( ! isset($this->_queries[$key])) {
+            if (! isset($this->_queries[$key])) {
                 throw new Doctrine_Query_Registry_Exception('A query with the name ' . $key . ' does not exist.');
             }
             $query = $this->_queries[$key];
         }
-        
-        if ( ! ($query instanceof Doctrine_Query)) {
+
+        if (! ($query instanceof Doctrine_Query)) {
             $query = Doctrine_Query::create()
                 ->parseDqlQuery($query);
         }
-        
+
         return clone $query;
     }
-    
-    
+
+
+    /**
+     * @param string $key
+     * @param string $namespace
+     * @return bool
+     */
     public function has($key, $namespace = null)
     {
-        return isset($namespace) 
+        return isset($namespace)
             ? isset($this->_queries[$namespace][$key])
             : isset($this->_queries[$key]);
     }

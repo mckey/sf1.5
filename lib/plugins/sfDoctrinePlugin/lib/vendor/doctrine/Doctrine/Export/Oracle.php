@@ -36,24 +36,23 @@ class Doctrine_Export_Oracle extends Doctrine_Export
     /**
      * create a new database
      *
-     * @param object $db database object that is extended by this class
      * @param string $name name of the database that should be created
      * @return boolean      success of operation
      */
     public function createDatabase($name)
     {
         if ($this->conn->getAttribute(Doctrine_Core::ATTR_EMULATE_DATABASE)) {
-            $username   = $name;
-            $password   = $this->conn->dsn['password'] ? $this->conn->dsn['password'] : $name;
+            $username = $name;
+            $password = $this->conn->dsn['password'] ? $this->conn->dsn['password'] : $name;
 
-            $tablespace = $this->conn->options['default_tablespace']
-                        ? ' DEFAULT TABLESPACE '.$this->conn->options['default_tablespace'] : '';
+            $tablespace = $this->conn->getOption('default_tablespace')
+                        ? ' DEFAULT TABLESPACE ' . $this->conn->getOption('default_tablespace') : '';
 
             $query  = 'CREATE USER ' . $username . ' IDENTIFIED BY ' . $password . $tablespace;
             $result = $this->conn->exec($query);
 
             try {
-                $query = 'GRANT CREATE SESSION, CREATE TABLE, UNLIMITED TABLESPACE, CREATE SEQUENCE, CREATE TRIGGER TO ' . $username;
+                $query  = 'GRANT CREATE SESSION, CREATE TABLE, UNLIMITED TABLESPACE, CREATE SEQUENCE, CREATE TRIGGER TO ' . $username;
                 $result = $this->conn->exec($query);
             } catch (Exception $e) {
                 $this->dropDatabase($username);
@@ -65,9 +64,8 @@ class Doctrine_Export_Oracle extends Doctrine_Export
     /**
      * drop an existing database
      *
-     * @param object $this->conn database object that is extended by this class
      * @param string $name name of the database that should be dropped
-     * @return boolean      success of operation
+     * @return void
      * @access public
      */
     public function dropDatabase($name)
@@ -76,10 +74,10 @@ class Doctrine_Export_Oracle extends Doctrine_Export
 BEGIN
   -- user_tables contains also materialized views
   FOR I IN (SELECT table_name FROM user_tables WHERE table_name NOT IN (SELECT mview_name FROM user_mviews))
-  LOOP 
+  LOOP
     EXECUTE IMMEDIATE 'DROP TABLE "'||I.table_name||'" CASCADE CONSTRAINTS';
   END LOOP;
-  
+
   FOR I IN (SELECT SEQUENCE_NAME FROM USER_SEQUENCES)
   LOOP
     EXECUTE IMMEDIATE 'DROP SEQUENCE "'||I.SEQUENCE_NAME||'"';
@@ -101,32 +99,31 @@ SQL;
      *
      * @param string $name  name of the PK field
      * @param string $table name of the table
-     * @param string $start start value for the sequence
-     * @return string        Sql code
-     * @access private
+     * @param int    $start start value for the sequence
+     * @return array        Sql code
      */
     public function _makeAutoincrement($name, $table, $start = 1)
     {
-        $sql   = array();
+        $sql = array();
 
-        if ( ! $this->conn->getAttribute(Doctrine_Core::ATTR_QUOTE_IDENTIFIER)) {
-        	$table = strtoupper($table);
+        if (! $this->conn->getAttribute(Doctrine_Core::ATTR_QUOTE_IDENTIFIER)) {
+            $table = strtoupper($table);
         }
         $indexName  = $table . '_AI_PK';
         $definition = array(
             'primary' => true,
-            'fields' => array($name => true),
+            'fields'  => array($name => true),
         );
-		
+
         $sql[] = 'DECLARE
   constraints_Count NUMBER;
 BEGIN
-  SELECT COUNT(CONSTRAINT_NAME) INTO constraints_Count FROM USER_CONSTRAINTS WHERE TABLE_NAME = \''.$table.'\' AND CONSTRAINT_TYPE = \'P\';
+  SELECT COUNT(CONSTRAINT_NAME) INTO constraints_Count FROM USER_CONSTRAINTS WHERE TABLE_NAME = \'' . $table . '\' AND CONSTRAINT_TYPE = \'P\';
   IF constraints_Count = 0 THEN
-    EXECUTE IMMEDIATE \''.$this->createConstraintSql($table, $indexName, $definition).'\';
+    EXECUTE IMMEDIATE \'' . $this->createConstraintSql($table, $indexName, $definition) . '\';
   END IF;
-END;';   
-		
+END;';
+
         if (is_null($start)) {
             $query = 'SELECT MAX(' . $this->conn->quoteIdentifier($name, true) . ') FROM ' . $this->conn->quoteIdentifier($table, true);
             $start = $this->conn->fetchOne($query);
@@ -138,9 +135,9 @@ END;';
 
         $sequenceName = $this->conn->formatter->getSequenceName($table);
         $triggerName  = $this->conn->quoteIdentifier($table . '_AI_PK', true);
-        $table = $this->conn->quoteIdentifier($table, true);
-        $name  = $this->conn->quoteIdentifier($name, true);
-        $sql[] = 'CREATE TRIGGER ' . $triggerName . '
+        $table        = $this->conn->quoteIdentifier($table, true);
+        $name         = $this->conn->quoteIdentifier($name, true);
+        $sql[]        = 'CREATE TRIGGER ' . $triggerName . '
    BEFORE INSERT
    ON ' . $table . '
    FOR EACH ROW
@@ -148,7 +145,7 @@ DECLARE
    last_Sequence NUMBER;
    last_InsertID NUMBER;
 BEGIN
-   IF (:NEW.' . $name . ' IS NULL OR :NEW.'.$name.' = 0) THEN
+   IF (:NEW.' . $name . ' IS NULL OR :NEW.' . $name . ' = 0) THEN
       SELECT ' . $this->conn->quoteIdentifier($sequenceName) . '.NEXTVAL INTO :NEW.' . $name . ' FROM DUAL;
    ELSE
       SELECT NVL(Last_Number, 0) INTO last_Sequence
@@ -171,16 +168,16 @@ END;';
      */
     public function dropAutoincrement($table)
     {
-        $table = strtoupper($table);
-        $triggerName = $table . '_AI_PK';
+        $table               = strtoupper($table);
+        $triggerName         = $table . '_AI_PK';
         $trigger_name_quoted = $this->conn->quote($triggerName);
-        $query = 'SELECT trigger_name FROM user_triggers';
-        $query.= ' WHERE trigger_name='.$trigger_name_quoted.' OR trigger_name='.strtoupper($trigger_name_quoted);
+        $query               = 'SELECT trigger_name FROM user_triggers';
+        $query .= ' WHERE trigger_name=' . $trigger_name_quoted . ' OR trigger_name=' . strtoupper($trigger_name_quoted);
         $trigger = $this->conn->fetchOne($query);
 
         if ($trigger) {
-            $trigger_name  = $this->conn->quoteIdentifier($table . '_AI_PK', true);
-            $trigger_sql = 'DROP TRIGGER ' . $trigger_name;
+            $trigger_name = $this->conn->quoteIdentifier($table . '_AI_PK', true);
+            $trigger_sql  = 'DROP TRIGGER ' . $trigger_name;
 
             // if throws exception, trigger for autoincrement PK could not be dropped
             $this->conn->exec($trigger_sql);
@@ -194,13 +191,13 @@ END;';
             $this->dropConstraint($table, $indexName);
         }
     }
-   /**
-     * A method to return the required SQL string that fits between CREATE ... TABLE
-     * to create the table as a temporary table.
-     *
-     * @return string The string required to be placed between "CREATE" and "TABLE"
-     *                to generate a temporary table, if possible.
-     */
+    /**
+      * A method to return the required SQL string that fits between CREATE ... TABLE
+      * to create the table as a temporary table.
+      *
+      * @return string The string required to be placed between "CREATE" and "TABLE"
+      *                to generate a temporary table, if possible.
+      */
     public function getTemporaryTableQuery()
     {
         return 'GLOBAL TEMPORARY';
@@ -305,41 +302,41 @@ END;';
      *                        );
      * @param array $options  An associative array of table options:
      *
-     * @return void
+     * @return array
      */
     public function createTableSql($name, array $fields, array $options = array())
     {
         $sql = parent::createTableSql($name, $fields, $options);
 
         if (isset($options['comment']) && ! empty($options['comment'])) {
-     	    $sql[] = $this->_createTableCommentSql($name, $options['comment']);
-     	}
+            $sql[] = $this->_createTableCommentSql($name, $options['comment']);
+        }
 
         foreach ($fields as $fieldName => $field) {
             if (isset($field['sequence'])) {
-              $sql[] = $this->createSequenceSql($field['sequence'], 1);
+                $sql[] = $this->createSequenceSql($field['sequence'], 1);
             }
 
             if (isset($field['autoincrement']) && $field['autoincrement'] ||
-               (isset($field['autoinc']) && $fields['autoinc'])) {           
+               (isset($field['autoinc']) && $fields['autoinc'])) {
                 $sql = array_merge($sql, $this->_makeAutoincrement($fieldName, $name));
             }
 
-            if (isset($field['comment']) && ! empty($field['comment'])){
-                $sql[] = $this->_createColumnCommentSql($name,$fieldName,$field['comment']); 
+            if (isset($field['comment']) && ! empty($field['comment'])) {
+                $sql[] = $this->_createColumnCommentSql($name, $fieldName, $field['comment']);
             }
         }
-        
+
         if (isset($options['indexes']) && ! empty($options['indexes'])) {
             foreach ($options['indexes'] as $indexName => $definition) {
                 // create nonunique indexes, as they are a part od CREATE TABLE DDL
-                if ( ! isset($definition['type']) || 
+                if (! isset($definition['type']) ||
                     (isset($definition['type']) && strtolower($definition['type']) != 'unique')) {
                     $sql[] = $this->createIndexSql($name, $indexName, $definition);
                 }
             }
         }
-        
+
         return $sql;
     }
 
@@ -351,9 +348,9 @@ END;';
      *
      * @return string
      */
-    public function _createTableCommentSql($table,$comment)
+    public function _createTableCommentSql($table, $comment)
     {
-        return 'COMMENT ON TABLE '. $this->conn->quoteIdentifier($table, true). ' IS '.$this->conn->quote($comment, 'text').'';
+        return 'COMMENT ON TABLE ' . $this->conn->quoteIdentifier($table, true) . ' IS ' . $this->conn->quote($comment, 'text') . '';
     }
 
     /**
@@ -365,9 +362,9 @@ END;';
      *
      * @return string
      */
-    public function _createColumnCommentSql($table,$column, $comment)
+    public function _createColumnCommentSql($table, $column, $comment)
     {
-        return 'COMMENT ON COLUMN '. $this->conn->quoteIdentifier($table, true). '.'. $this->conn->quoteIdentifier($column, true). ' IS '.$this->conn->quote($comment, 'text').'';
+        return 'COMMENT ON COLUMN ' . $this->conn->quoteIdentifier($table, true) . '.' . $this->conn->quoteIdentifier($column, true) . ' IS ' . $this->conn->quote($comment, 'text') . '';
     }
 
     /**
@@ -379,10 +376,9 @@ END;';
     public function dropTable($name)
     {
         //$this->conn->beginNestedTransaction();
-        $result = $this->dropAutoincrement($name);
-        $result = parent::dropTable($name);
+        $this->dropAutoincrement($name);
+        parent::dropTable($name);
         //$this->conn->completeNestedTransaction();
-        return $result;
     }
 
     /**
@@ -471,11 +467,10 @@ END;';
      * @param boolean $check     indicates whether the function should just check if the DBMS driver
      *                             can perform the requested table alterations if the value is true or
      *                             actually perform them otherwise.
-     * @return void
+     * @return false|void
      */
     public function alterTable($name, array $changes, $check = false)
     {
-
         foreach ($changes as $changeName => $change) {
             switch ($changeName) {
                 case 'add':
@@ -495,23 +490,23 @@ END;';
 
         $name = $this->conn->quoteIdentifier($name, true);
 
-        if ( ! empty($changes['add']) && is_array($changes['add'])) {
+        if (! empty($changes['add']) && is_array($changes['add'])) {
             $fields = array();
             foreach ($changes['add'] as $fieldName => $field) {
-                $fields[] = $this->getDeclaration($fieldName, $field); 
+                $fields[] = $this->getDeclaration($fieldName, $field);
             }
             $result = $this->conn->exec('ALTER TABLE ' . $name . ' ADD (' . implode(', ', $fields) . ')');
         }
 
-        if ( ! empty($changes['change']) && is_array($changes['change'])) {
+        if (! empty($changes['change']) && is_array($changes['change'])) {
             $fields = array();
             foreach ($changes['change'] as $fieldName => $field) {
-                $fields[] = $fieldName. ' ' . $this->getDeclaration('', $field['definition']);
+                $fields[] = $fieldName . ' ' . $this->getDeclaration('', $field['definition']);
             }
             $result = $this->conn->exec('ALTER TABLE ' . $name . ' MODIFY (' . implode(', ', $fields) . ')');
         }
 
-        if ( ! empty($changes['rename']) && is_array($changes['rename'])) {
+        if (! empty($changes['rename']) && is_array($changes['rename'])) {
             foreach ($changes['rename'] as $fieldName => $field) {
                 $query = 'ALTER TABLE ' . $name . ' RENAME COLUMN ' . $this->conn->quoteIdentifier($fieldName, true)
                        . ' TO ' . $this->conn->quoteIdentifier($field['name']);
@@ -520,7 +515,7 @@ END;';
             }
         }
 
-        if ( ! empty($changes['remove']) && is_array($changes['remove'])) {
+        if (! empty($changes['remove']) && is_array($changes['remove'])) {
             $fields = array();
             foreach ($changes['remove'] as $fieldName => $field) {
                 $fields[] = $this->conn->quoteIdentifier($fieldName, true);
@@ -528,9 +523,9 @@ END;';
             $result = $this->conn->exec('ALTER TABLE ' . $name . ' DROP COLUMN ' . implode(', ', $fields));
         }
 
-        if ( ! empty($changes['name'])) {
+        if (! empty($changes['name'])) {
             $changeName = $this->conn->quoteIdentifier($changes['name'], true);
-            $result = $this->conn->exec('ALTER TABLE ' . $name . ' RENAME TO ' . $changeName);
+            $result     = $this->conn->exec('ALTER TABLE ' . $name . ' RENAME TO ' . $changeName);
         }
     }
 
@@ -538,7 +533,7 @@ END;';
      * create sequence
      *
      * @param string $seqName name of the sequence to be created
-     * @param string $start start value of the sequence; default is 1
+     * @param string|int $start start value of the sequence; default is 1
      * @param array     $options  An associative array of table options:
      *                          array(
      *                              'comment' => 'Foo',
@@ -550,7 +545,7 @@ END;';
     public function createSequenceSql($seqName, $start = 1, array $options = array())
     {
         $sequenceName = $this->conn->quoteIdentifier($this->conn->formatter->getSequenceName($seqName), true);
-        $query  = 'CREATE SEQUENCE ' . $sequenceName . ' START WITH ' . $start . ' INCREMENT BY 1 NOCACHE';
+        $query        = 'CREATE SEQUENCE ' . $sequenceName . ' START WITH ' . $start . ' INCREMENT BY 1 NOCACHE';
         $query .= ($start < 1 ? ' MINVALUE ' . $start : '');
         return $query;
     }
@@ -558,7 +553,6 @@ END;';
     /**
      * drop existing sequence
      *
-     * @param object $this->conn database object that is extended by this class
      * @param string $seqName name of the sequence to be dropped
      * @return string
      */
@@ -571,36 +565,35 @@ END;';
     /**
      * return Oracle's SQL code portion needed to set an index
      * declaration to be unsed in statements like CREATE TABLE.
-     * 
+     *
      * @param string $name      name of the index
      * @param array $definition index definition
-     * @return string           Oracle's SQL code portion needed to set an index  
-     */    
+     * @return string|null           Oracle's SQL code portion needed to set an index
+     */
     public function getIndexDeclaration($name, array $definition)
     {
         $name = $this->conn->quoteIdentifier($name);
         $type = '';
-        
-        if ( isset($definition['type']))
-        {
+
+        if (isset($definition['type'])) {
             if (strtolower($definition['type']) == 'unique') {
                 $type = strtoupper($definition['type']);
             } else {
                 throw new Doctrine_Export_Exception(
-                    'Unknown type '.$definition['type'] .' for index '.$name
+                    'Unknown type ' . $definition['type'] . ' for index ' . $name
                 );
             }
         } else {
             // only unique indexes should be defined in create table statement
             return null;
         }
-        
-        if ( !isset($definition['fields']) || !is_array($definition['fields'])) {
-            throw new Doctrine_Export_Exception('No columns given for index '.$name);
+
+        if (!isset($definition['fields']) || !is_array($definition['fields'])) {
+            throw new Doctrine_Export_Exception('No columns given for index ' . $name);
         }
-        
-        $query = 'CONSTRAINT '.$name.' '.$type.' ('.$this->getIndexFieldDeclarationList($definition['fields']).')';
-        
+
+        $query = 'CONSTRAINT ' . $name . ' ' . $type . ' (' . $this->getIndexFieldDeclarationList($definition['fields']) . ')';
+
         return $query;
     }
 }

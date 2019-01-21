@@ -67,6 +67,31 @@ class Doctrine_Node_NestedSet_PreOrderIterator implements Iterator
      */
     protected $count;
 
+    // These were undefined, added for static analysis and set to public so api isn't changed
+    /**
+     * @var int
+     */
+    public $level;
+
+    /**
+     * @var int
+     */
+    public $maxLevel;
+
+    /**
+     * @var array
+     */
+    public $options;
+
+    /**
+     * @var int
+     */
+    public $prevLeft;
+
+    /**
+     * @param Doctrine_Record $record
+     * @param array $opts
+     */
     public function __construct($record, $opts)
     {
         $componentName = $record->getTable()->getComponentName();
@@ -79,17 +104,21 @@ class Doctrine_Node_NestedSet_PreOrderIterator implements Iterator
         } else {
             $query = $q->where("$componentName.lft > ? AND $componentName.rgt < ?", $params)->orderBy("$componentName.lft asc");
         }
-        
-        $query = $record->getTable()->getTree()->returnQueryWithRootId($query, $record->getNode()->getRootValue());
 
-        $this->maxLevel   = isset($opts['depth']) ? ($opts['depth'] + $record->getNode()->getLevel()) : 0;
+        /** @var Doctrine_Tree_NestedSet $tree */
+        $tree = $record->getTable()->getTree();
+        /** @var Doctrine_Node_NestedSet $node */
+        $node  = $record->getNode();
+        $query = $tree->returnQueryWithRootId($query, $node->getRootValue());
+
+        $this->maxLevel   = isset($opts['depth']) ? ($opts['depth'] + $node->getLevel()) : 0;
         $this->options    = $opts;
         $this->collection = isset($opts['collection']) ? $opts['collection'] : $query->execute();
         $this->keys       = $this->collection->getKeys();
         $this->count      = $this->collection->count();
         $this->index      = -1;
-        $this->level      = $record->getNode()->getLevel();
-        $this->prevLeft   = $record->getNode()->getLeftValue();
+        $this->level      = $node->getLevel();
+        $this->prevLeft   = $node->getLeftValue();
 
         // clear the table identity cache
         $record->getTable()->clear();
@@ -103,13 +132,13 @@ class Doctrine_Node_NestedSet_PreOrderIterator implements Iterator
     public function rewind()
     {
         $this->index = -1;
-        $this->key = null;
+        $this->key   = null;
     }
 
     /**
      * returns the current key
      *
-     * @return integer
+     * @return mixed
      */
     public function key()
     {
@@ -124,14 +153,16 @@ class Doctrine_Node_NestedSet_PreOrderIterator implements Iterator
     public function current()
     {
         $record = $this->collection->get($this->key);
-        $record->getNode()->setLevel($this->level);
+        /** @var Doctrine_Node_NestedSet $node */
+        $node = $record->getNode();
+        $node->setLevel($this->level);
         return $record;
     }
 
     /**
      * advances the internal pointer
      *
-     * @return void
+     * @return false|Doctrine_Record
      */
     public function next()
     {
@@ -154,26 +185,37 @@ class Doctrine_Node_NestedSet_PreOrderIterator implements Iterator
         return ($this->index < $this->count);
     }
 
+    /**
+     * @return int
+     */
     public function count()
     {
         return $this->count;
     }
 
+    /**
+     * @return void
+     */
     private function updateLevel()
     {
-        if ( ! (isset($this->options['include_record']) && $this->options['include_record'] && $this->index == 0)) {
-            $left = $this->collection->get($this->key)->getNode()->getLeftValue();
+        if (! (isset($this->options['include_record']) && $this->options['include_record'] && $this->index == 0)) {
+            /** @var Doctrine_Node_NestedSet $node */
+            $node = $this->collection->get($this->key)->getNode();
+            $left = $node->getLeftValue();
             $this->level += $this->prevLeft - $left + 2;
             $this->prevLeft = $left;
         }
     }
 
+    /**
+     * @return false|Doctrine_Record
+     */
     private function advanceIndex()
     {
         $this->index++;
         $i = $this->index;
         if (isset($this->keys[$i])) {
-            $this->key   = $this->keys[$i];
+            $this->key = $this->keys[$i];
             $this->updateLevel();
             return $this->current();
         }

@@ -37,7 +37,7 @@ class Doctrine_Transaction_Mysql extends Doctrine_Transaction
      * creates a new savepoint
      *
      * @param string $savepoint     name of a savepoint to set
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function createSavePoint($savepoint)
     {
@@ -51,7 +51,7 @@ class Doctrine_Transaction_Mysql extends Doctrine_Transaction
      * releases given savepoint
      *
      * @param string $savepoint     name of a savepoint to release
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function releaseSavePoint($savepoint)
     {
@@ -65,7 +65,7 @@ class Doctrine_Transaction_Mysql extends Doctrine_Transaction
      * releases given savepoint
      *
      * @param string $savepoint     name of a savepoint to rollback to
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function rollbackSavePoint($savepoint)
     {
@@ -77,7 +77,7 @@ class Doctrine_Transaction_Mysql extends Doctrine_Transaction
     /**
      * Set the transacton isolation level.
      *
-     * @param   string  standard isolation level
+     * @param   string  $isolation standard isolation level
      *                  READ UNCOMMITTED (allows dirty reads)
      *                  READ COMMITTED (prevents dirty reads)
      *                  REPEATABLE READ (prevents nonrepeatable reads)
@@ -85,7 +85,7 @@ class Doctrine_Transaction_Mysql extends Doctrine_Transaction
      *
      * @throws Doctrine_Transaction_Exception           if using unknown isolation level
      * @throws PDOException                             if something fails at the PDO level
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     public function setIsolation($isolation)
     {

@@ -34,14 +34,30 @@
  */
 class Doctrine_Hydrator
 {
-    protected static
-        $_totalHydrationTime = 0;
+    /**
+     * @var int
+     */
+    protected static $_totalHydrationTime = 0;
 
-    protected
-        $_hydrators,
-        $_rootAlias = null,
-        $_hydrationMode = Doctrine_Core::HYDRATE_RECORD,
-        $_queryComponents = array();
+    /**
+     * @var array
+     */
+    protected $_hydrators;
+
+    /**
+     * @var string|null
+     */
+    protected $_rootAlias = null;
+
+    /**
+     * @var int
+     */
+    protected $_hydrationMode = Doctrine_Core::HYDRATE_RECORD;
+
+    /**
+     * @var array
+     */
+    protected $_queryComponents = array();
 
     public function __construct()
     {
@@ -51,9 +67,11 @@ class Doctrine_Hydrator
     /**
      * Set the hydration mode
      *
-     * @param mixed $hydrationMode  One of the Doctrine_Core::HYDRATE_* constants or 
+     * @param mixed $hydrationMode  One of the Doctrine_Core::HYDRATE_* constants or
      *                              a string representing the name of the hydration mode or
      *                              or an instance of the hydration class
+     *
+     * @return void
      */
     public function setHydrationMode($hydrationMode)
     {
@@ -74,6 +92,8 @@ class Doctrine_Hydrator
      * Set the array of query components
      *
      * @param array $queryComponents
+     *
+     * @return void
      */
     public function setQueryComponents(array $queryComponents)
     {
@@ -93,7 +113,7 @@ class Doctrine_Hydrator
     /**
      * Get the name of the driver class for the passed hydration mode
      *
-     * @param string $mode
+     * @param int $mode
      * @return string $className
      */
     public function getHydratorDriverClassName($mode = null)
@@ -102,8 +122,8 @@ class Doctrine_Hydrator
             $mode = $this->_hydrationMode;
         }
 
-        if ( ! isset($this->_hydrators[$mode])) {
-            throw new Doctrine_Hydrator_Exception('Invalid hydration mode specified: '.$this->_hydrationMode);
+        if (! isset($this->_hydrators[$mode])) {
+            throw new Doctrine_Hydrator_Exception('Invalid hydration mode specified: ' . $this->_hydrationMode);
         }
 
         return $this->_hydrators[$mode];
@@ -112,22 +132,24 @@ class Doctrine_Hydrator
     /**
      * Get an instance of the hydration driver for the passed hydration mode
      *
-     * @param string $mode 
-     * @param array $tableAliases 
-     * @return object Doctrine_Hydrator_Abstract
+     * @param int $mode
+     * @param array $tableAliases
+     * @return Doctrine_Hydrator_Abstract
      */
     public function getHydratorDriver($mode, $tableAliases)
     {
         $driverClass = $this->getHydratorDriverClassName($mode);
         if (is_object($driverClass)) {
-            if (!$driverClass instanceOf Doctrine_Hydrator_Abstract) {
-                throw new Doctrine_Hydrator_Exception('Invalid hydration class specified: '.get_class($driverClass));
+            if (!$driverClass instanceof Doctrine_Hydrator_Abstract) {
+                throw new Doctrine_Hydrator_Exception('Invalid hydration class specified: ' . get_class($driverClass));
             }
+            /** @var Doctrine_Hydrator_Abstract $driver */
             $driver = $driverClass;
             $driver->setQueryComponents($this->_queryComponents);
             $driver->setTableAliases($tableAliases);
             $driver->setHydrationMode($mode);
         } else {
+            /** @var Doctrine_Hydrator_Abstract $driver */
             $driver = new $driverClass($this->_queryComponents, $tableAliases, $mode);
         }
 
@@ -138,8 +160,8 @@ class Doctrine_Hydrator
      * Hydrate the query statement in to its final data structure by one of the
      * hydration drivers.
      *
-     * @param object $stmt 
-     * @param array $tableAliases 
+     * @param Doctrine_Adapter_Statement_Interface|PDOStatement $stmt
+     * @param array $tableAliases
      * @return mixed $result
      */
     public function hydrateResultSet($stmt, $tableAliases)

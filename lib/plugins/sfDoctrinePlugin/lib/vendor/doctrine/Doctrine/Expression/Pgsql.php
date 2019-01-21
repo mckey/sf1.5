@@ -48,6 +48,7 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
      * </code>
      * You should make sure you run this as the postgres user.
      *
+     * @param string $column
      * @return string
      */
     public function md5($column)
@@ -72,7 +73,6 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
         $value = $this->getIdentifier($value);
 
         if ($len === null) {
-            $len = $this->getIdentifier($len);
             return 'SUBSTR(' . $value . ', ' . $from . ')';
         } else {
             return 'SUBSTR(' . $value . ', ' . $from . ', ' . $len . ')';
@@ -97,8 +97,9 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
      * @param string $timestamp2 optional; if given: subtract arguments
      * @return string
      */
-    public function age($timestamp1, $timestamp2 = null) {
-        if ( $timestamp2 == null ) {
+    public function age($timestamp1, $timestamp2 = null)
+    {
+        if ($timestamp2 == null) {
             return 'AGE(' . $timestamp1 . ')';
         }
         return 'AGE(' . $timestamp1 . ', ' . $timestamp2 . ')';
@@ -123,21 +124,20 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
      * @param string $text how to the format the output
      * @return string
      */
-    public function to_char($time, $text) {
+    public function to_char($time, $text)
+    {
         return 'TO_CHAR(' . $time . ', ' . $text . ')';
     }
 
     /**
      * PostgreSQLs CONCAT() function
      *
-     * @param  an array of values
+     * @param  mixed ...$args values to concat
      * @return string
      */
-    public function concat()
+    public function concat(...$args)
     {
-        $args = func_get_args();
-
-        return join(' || ' , $args);
+        return join(' || ', $args);
     }
 
     /**
@@ -163,7 +163,7 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
     /**
      * return string to call a function to get random value inside an SQL statement
      *
-     * @return return string to generate float between 0 and 1
+     * @return string string to generate float between 0 and 1
      * @access public
      */
     public function random()
@@ -191,44 +191,47 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
     public function matchPattern($pattern, $operator = null, $field = null)
     {
         $match = '';
-        if ( ! is_null($operator)) {
-            $field = is_null($field) ? '' : $field.' ';
+        if (! is_null($operator)) {
+            $field    = is_null($field) ? '' : $field . ' ';
             $operator = strtoupper($operator);
             switch ($operator) {
                 // case insensitive
             case 'ILIKE':
-                $match = $field.'ILIKE ';
+                $match = $field . 'ILIKE ';
                 break;
                 // case sensitive
             case 'LIKE':
-                $match = $field.'LIKE ';
+                $match = $field . 'LIKE ';
                 break;
             default:
-                throw new Doctrine_Expression_Pgsql_Exception('not a supported operator type:'. $operator);
+                throw new Doctrine_Expression_Exception('not a supported operator type:' . $operator);
             }
         }
-        $match.= "'";
+        $match .= "'";
         foreach ($pattern as $key => $value) {
             if ($key % 2) {
-                $match.= $value;
+                $match .= $value;
             } else {
-                $match.= $this->conn->escapePattern($this->conn->escape($value));
+                $match .= $this->conn->escapePattern($this->conn->escape($value));
             }
         }
-        $match.= "'";
-        $match.= $this->patternEscapeString();
+        $match .= "'";
+        $match .= $this->patternEscapeString();
         return $match;
     }
 
     /**
      * return syntax for pgsql TRANSLATE() dbms function
      *
+     * @param string $string
+     * @param string $from
+     * @param string $to
      * @return string $sql
      */
     public function translate($string, $from, $to)
     {
-    	$translate = 'TRANSLATE(' . $string . ', ' . $from . ', ' . $to . ')';
-    	return $translate;
+        $translate = 'TRANSLATE(' . $string . ', ' . $from . ', ' . $to . ')';
+        return $translate;
     }
 
     /**
@@ -242,7 +245,7 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
     {
         return $this->position($substr, $str);
     }
-    
+
     /**
      * position
      *
@@ -253,8 +256,8 @@ class Doctrine_Expression_Pgsql extends Doctrine_Expression_Driver
     public function position($substr, $str)
     {
         $substr = $this->getIdentifier($substr);
-        $str = $this->getIdentifier($str);
-        
+        $str    = $this->getIdentifier($str);
+
         return sprintf('POSITION(%s IN %s)', $substr, $str);
     }
 }

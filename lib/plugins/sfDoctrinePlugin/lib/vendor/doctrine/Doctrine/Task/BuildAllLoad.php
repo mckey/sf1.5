@@ -32,26 +32,51 @@
  */
 class Doctrine_Task_BuildAllLoad extends Doctrine_Task
 {
-    public $description          =   'Calls build-all, and load-data',
-           $requiredArguments    =   array(),
-           $optionalArguments    =   array();
-    
+    /**
+     * @var string
+     */
+    public $description = 'Calls build-all, and load-data';
+
+    /**
+     * @var array
+     */
+    public $requiredArguments = array();
+
+    /**
+     * @var array
+     */
+    public $optionalArguments = array();
+
+    // These were undefined, added for static analysis and set to public so api isn't changed
+    /**
+     * @var Doctrine_Task_BuildAll
+     */
+    public $buildAll;
+
+    /**
+     * @var Doctrine_Task_LoadData
+     */
+    public $loadData;
+
+    /**
+     * @param Doctrine_Cli $dispatcher
+     */
     public function __construct($dispatcher = null)
     {
         parent::__construct($dispatcher);
 
         $this->buildAll = new Doctrine_Task_BuildAll($this->dispatcher);
         $this->loadData = new Doctrine_Task_LoadData($this->dispatcher);
-        
+
         $this->requiredArguments = array_merge($this->requiredArguments, $this->buildAll->requiredArguments, $this->loadData->requiredArguments);
         $this->optionalArguments = array_merge($this->optionalArguments, $this->buildAll->optionalArguments, $this->loadData->optionalArguments);
     }
-    
+
     public function execute()
     {
         $this->buildAll->setArguments($this->getArguments());
         $this->buildAll->execute();
-        
+
         $this->loadData->setArguments($this->getArguments());
         $this->loadData->execute();
     }

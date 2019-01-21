@@ -43,6 +43,9 @@ class Doctrine_Relation_Association extends Doctrine_Relation
         return $this->definition['refTable'];
     }
 
+    /**
+     * @return Doctrine_Table
+     */
     public function getAssociationTable()
     {
         return $this->definition['refTable'];
@@ -52,25 +55,27 @@ class Doctrine_Relation_Association extends Doctrine_Relation
      * getRelationDql
      *
      * @param integer $count
+     * @param string $context
      * @return string
      */
     public function getRelationDql($count, $context = 'record')
     {
-        $table = $this->definition['refTable'];
+        $table     = $this->definition['refTable'];
         $component = $this->definition['refTable']->getComponentName();
-        
+        $dql       = '';
+
         switch ($context) {
-            case "record":
-                $sub  = substr(str_repeat("?, ", $count),0,-2);
-                $dql  = 'FROM ' . $this->getTable()->getComponentName();
+            case 'record':
+                $sub = substr(str_repeat('?, ', $count), 0, -2);
+                $dql = 'FROM ' . $this->getTable()->getComponentName();
                 $dql .= '.' . $component;
                 $dql .= ' WHERE ' . $this->getTable()->getComponentName()
                 . '.' . $component . '.' . $this->getLocalRefColumnName() . ' IN (' . $sub . ')';
                 $dql .= $this->getOrderBy($this->getTable()->getComponentName(), false);
                 break;
-            case "collection":
-                $sub  = substr(str_repeat("?, ", $count),0,-2);
-                $dql  = 'FROM ' . $component . '.' . $this->getTable()->getComponentName();
+            case 'collection':
+                $sub = substr(str_repeat('?, ', $count), 0, -2);
+                $dql = 'FROM ' . $component . '.' . $this->getTable()->getComponentName();
                 $dql .= ' WHERE ' . $component . '.' . $this->getLocalRefColumnName() . ' IN (' . $sub . ')';
                 $dql .= $this->getOrderBy($component, false);
                 break;
@@ -79,40 +84,44 @@ class Doctrine_Relation_Association extends Doctrine_Relation
         return $dql;
     }
 
-	/**
+    /**
      * getLocalRefColumnName
      * returns the column name of the local reference column
+     * @return string
      */
     final public function getLocalRefColumnName()
     {
-	    return $this->definition['refTable']->getColumnName($this->definition['local']);
+        return $this->definition['refTable']->getColumnName($this->definition['local']);
     }
 
     /**
      * getLocalRefFieldName
      * returns the field name of the local reference column
+     * @return string
      */
     final public function getLocalRefFieldName()
     {
-	    return $this->definition['refTable']->getFieldName($this->definition['local']);
+        return $this->definition['refTable']->getFieldName($this->definition['local']);
     }
 
     /**
      * getForeignRefColumnName
      * returns the column name of the foreign reference column
+     * @return string
      */
     final public function getForeignRefColumnName()
     {
-	    return $this->definition['refTable']->getColumnName($this->definition['foreign']);
+        return $this->definition['refTable']->getColumnName($this->definition['foreign']);
     }
 
     /**
      * getForeignRefFieldName
      * returns the field name of the foreign reference column
+     * @return string
      */
     final public function getForeignRefFieldName()
     {
-	    return $this->definition['refTable']->getFieldName($this->definition['foreign']);
+        return $this->definition['refTable']->getFieldName($this->definition['foreign']);
     }
 
     /**
