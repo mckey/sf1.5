@@ -33,18 +33,30 @@
  */
 abstract class Doctrine_Record_Filter
 {
+    /**
+     * @var Doctrine_Table
+     */
     protected $_table;
 
+    /**
+     * @return void
+     */
     public function setTable(Doctrine_Table $table)
     {
         $this->_table = $table;
     }
 
+    /**
+     * @return Doctrine_Table
+     */
     public function getTable()
     {
         return $this->_table;
     }
 
+    /**
+     * @return void
+     */
     public function init()
     {
     }
@@ -54,6 +66,7 @@ abstract class Doctrine_Record_Filter
      * defines an implementation for filtering the set() method of Doctrine_Record
      *
      * @param mixed $name                       name of the property or related component
+     * @param mixed $value
      */
     abstract public function filterSet(Doctrine_Record $record, $name, $value);
 

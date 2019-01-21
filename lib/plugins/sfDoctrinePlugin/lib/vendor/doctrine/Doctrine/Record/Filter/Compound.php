@@ -32,6 +32,9 @@
  */
 class Doctrine_Record_Filter_Compound extends Doctrine_Record_Filter
 {
+    /**
+     * @var array
+     */
     protected $_aliases = array();
 
     public function __construct(array $aliases)
@@ -39,12 +42,15 @@ class Doctrine_Record_Filter_Compound extends Doctrine_Record_Filter
         $this->_aliases = $aliases;
     }
 
+    /**
+     * @return void
+     */
     public function init()
     {
-    	// check that all aliases exist
-    	foreach ($this->_aliases as $alias) {
+        // check that all aliases exist
+        foreach ($this->_aliases as $alias) {
             $this->_table->getRelation($alias);
-    	}
+        }
     }
 
     /**
@@ -52,19 +58,24 @@ class Doctrine_Record_Filter_Compound extends Doctrine_Record_Filter
      * defines an implementation for filtering the set() method of Doctrine_Record
      *
      * @param mixed $name                       name of the property or related component
+     * @param mixed $value
+     *
+     * @return Doctrine_Record
      */
     public function filterSet(Doctrine_Record $record, $name, $value)
     {
         foreach ($this->_aliases as $alias) {
-            if ( ! $record->exists()) {
-                if (isset($record[$alias][$name])) {
-                    $record[$alias][$name] = $value;
-                    
+            $relation = $record[$alias];
+
+            if (! $record->exists()) {
+                if (isset($relation[$name])) {
+                    $relation[$name] = $value;
+
                     return $record;
                 }
             } else {
-                if (isset($record[$alias][$name])) {
-                    $record[$alias][$name] = $value;
+                if (isset($relation[$name])) {
+                    $relation[$name] = $value;
                 }
 
                 return $record;
@@ -78,11 +89,12 @@ class Doctrine_Record_Filter_Compound extends Doctrine_Record_Filter
      * defines an implementation for filtering the get() method of Doctrine_Record
      *
      * @param mixed $name                       name of the property or related component
+     * @return mixed
      */
     public function filterGet(Doctrine_Record $record, $name)
     {
         foreach ($this->_aliases as $alias) {
-            if ( ! $record->exists()) {
+            if (! $record->exists()) {
                 if (isset($record[$alias][$name])) {
                     return $record[$alias][$name];
                 }

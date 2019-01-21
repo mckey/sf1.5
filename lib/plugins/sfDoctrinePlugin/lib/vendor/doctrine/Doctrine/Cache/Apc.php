@@ -40,7 +40,7 @@ class Doctrine_Cache_Apc extends Doctrine_Cache_Driver
      */
     public function __construct($options = array())
     {
-        if ( ! extension_loaded('apc')) {
+        if (! extension_loaded('apc')) {
             throw new Doctrine_Cache_Exception('The apc extension must be loaded for using this backend !');
         }
         parent::__construct($options);
@@ -77,12 +77,19 @@ class Doctrine_Cache_Apc extends Doctrine_Cache_Driver
      *
      * @param string $id        cache id
      * @param string $data      data to cache
-     * @param int $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
+     * @param int|false $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
      * @return boolean true if no problem
      */
     protected function _doSave($id, $data, $lifeTime = false)
     {
-        return apc_store($id, $data, $lifeTime);
+        if ($lifeTime === false) {
+            $lifeTime = 0;
+        }
+
+        /** @var bool $result */
+        $result = apc_store($id, $data, $lifeTime);
+
+        return $result;
     }
 
     /**
@@ -94,7 +101,10 @@ class Doctrine_Cache_Apc extends Doctrine_Cache_Driver
      */
     protected function _doDelete($id)
     {
-        return apc_delete($id);
+        /** @var bool $result */
+        $result = apc_delete($id);
+
+        return $result;
     }
 
     /**
@@ -104,11 +114,11 @@ class Doctrine_Cache_Apc extends Doctrine_Cache_Driver
      */
     protected function _getCacheKeys()
     {
-        $ci = apc_cache_info('user');
+        $ci   = apc_cache_info('user');
         $keys = array();
 
         foreach ($ci['cache_list'] as $entry) {
-          $keys[] = $entry['info'];
+            $keys[] = $entry['info'];
         }
         return $keys;
     }

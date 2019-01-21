@@ -18,7 +18,7 @@
  * and is licensed under the LGPL. For more information, see
  * <http://www.doctrine-project.org>.
  */
- 
+
 /**
  * Doctrine_I18n_Exception
  *
@@ -31,4 +31,5 @@
  * @author      Konsta Vesterinen <kvesteri@cc.hut.fi>
  */
 class Doctrine_I18n_Exception extends Doctrine_Exception
-{ }
+{
+}

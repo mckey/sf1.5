@@ -32,10 +32,20 @@
  */
 class Doctrine_Node_MaterializedPath_LevelOrderIterator implements Iterator
 {
+    /**
+     * @var Doctrine_Node
+     */
     private $topNode = null;
 
+    /**
+     * @var Doctrine_Node
+     */
     private $curNode = null;
 
+    /**
+     * @param Doctrine_Node $node
+     * @param array $opts
+     */
     public function __construct($node, $opts)
     {
         throw new Doctrine_Exception('Not yet implemented');

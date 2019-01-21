@@ -41,7 +41,7 @@ class Doctrine_Cache_Xcache extends Doctrine_Cache_Driver
      */
     public function __construct($options = array())
     {
-        if ( ! extension_loaded('xcache') ) {
+        if (! extension_loaded('xcache')) {
             throw new Doctrine_Cache_Exception('In order to use Xcache driver, the xcache extension must be loaded.');
         }
 
@@ -76,11 +76,15 @@ class Doctrine_Cache_Xcache extends Doctrine_Cache_Driver
      *
      * @param string $id        cache id
      * @param string $data      data to cache
-     * @param int $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
+     * @param int|false $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
      * @return boolean true if no problem
      */
     protected function _doSave($id, $data, $lifeTime = false)
     {
+        if ($lifeTime === false) {
+            return xcache_set($id, $data);
+        }
+
         return xcache_set($id, $data, $lifeTime);
     }
 

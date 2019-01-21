@@ -34,13 +34,19 @@ abstract class Doctrine_Migration_Base
 {
     /**
      * The default options for tables created using Doctrine_Migration_Base::createTable()
-     * 
+     *
      * @var array
      */
     private static $defaultTableOptions = array();
 
+    /**
+     * @var array
+     */
     protected $_changes = array();
 
+    /**
+     * @var array
+     */
     protected static $_opposites = array('created_table'       => 'dropped_table',
                                          'dropped_table'       => 'created_table',
                                          'created_constraint'  => 'dropped_constraint',
@@ -63,6 +69,9 @@ abstract class Doctrine_Migration_Base
         return $this->_changes;
     }
 
+    /**
+     * @return int
+     */
     public function getNumChanges()
     {
         return count($this->_changes);
@@ -72,8 +81,8 @@ abstract class Doctrine_Migration_Base
      * Add a change to the stack of changes to execute
      *
      * @param string $type    The type of change
-     * @param array  $change   The array of information for the change 
-     * @return void
+     * @param array  $change   The array of information for the change
+     * @return array
      */
     protected function _addChange($type, array $change = array())
     {
@@ -81,7 +90,7 @@ abstract class Doctrine_Migration_Base
             $upDown = $change['upDown'];
             unset($change['upDown']);
             if ($upDown == 'down') {
-                $opposite = self::$_opposites[$type];
+                $opposite                = self::$_opposites[$type];
                 return $this->_changes[] = array($opposite, $change);
             }
         }
@@ -90,8 +99,10 @@ abstract class Doctrine_Migration_Base
 
     /**
      * Sets the default options for tables created using Doctrine_Migration_Base::createTable()
-     * 
+     *
      * @param array $options
+     *
+     * @return void
      */
     public static function setDefaultTableOptions(array $options)
     {
@@ -100,7 +111,7 @@ abstract class Doctrine_Migration_Base
 
     /**
      * Returns the default options for tables created using Doctrine_Migration_Base::createTable()
-     * 
+     *
      * @return array
      */
     public static function getDefaultTableOptions()
@@ -158,7 +169,7 @@ abstract class Doctrine_Migration_Base
     public function renameTable($oldTableName, $newTableName)
     {
         $options = get_defined_vars();
-        
+
         $this->_addChange('renamed_table', $options);
     }
 
@@ -167,14 +178,14 @@ abstract class Doctrine_Migration_Base
      *
      * @param string $upDown            Whether to add the up(create) or down(drop) create change.
      * @param string $tableName         Name of the table.
-     * @param string $constraintName    Name of the constraint.
+     * @param string|null $constraintName    Name of the constraint.
      * @param array  $definition        Array for the constraint definition.
      * @return void
      */
     public function constraint($upDown, $tableName, $constraintName, array $definition)
     {
         $options = get_defined_vars();
-        
+
         $this->_addChange('created_constraint', $options);
     }
 
@@ -182,7 +193,7 @@ abstract class Doctrine_Migration_Base
      * Add a create constraint change.
      *
      * @param string $tableName         Name of the table.
-     * @param string $constraintname    Name of the constraint.
+     * @param string|null $constraintName    Name of the constraint.
      * @param array  $definition        Array for the constraint definition.
      * @return void
      */
@@ -195,7 +206,8 @@ abstract class Doctrine_Migration_Base
      * Add a drop constraint change.
      *
      * @param string $tableName         Name of the table.
-     * @param string $constraintname    Name of the constraint.
+     * @param string|null $constraintName    Name of the constraint.
+     * @param bool $primary
      * @return void
      */
     public function dropConstraint($tableName, $constraintName, $primary = false)
@@ -206,9 +218,9 @@ abstract class Doctrine_Migration_Base
     /**
      * Convenience method for creating or dropping primary keys.
      *
-     * @param string $direction 
+     * @param string $direction
      * @param string $tableName     Name of the table
-     * @param string $columnNames   Array of column names and column definitions
+     * @param array $columnNames   Array of column names and column definitions
      * @return void
      */
     public function primaryKey($direction, $tableName, $columnNames)
@@ -237,20 +249,20 @@ abstract class Doctrine_Migration_Base
      *  * Add new columns (addColumn())
      *  * Create primary constraint on columns (createConstraint())
      *  * Change autoincrement = true field to be autoincrement
-     * 
+     *
      * @param string $tableName     Name of the table
-     * @param string $columnNames   Array of column names and column definitions
+     * @param array $columnNames   Array of column names and column definitions
      * @return void
      */
     public function createPrimaryKey($tableName, $columnNames)
     {
         $autoincrement = false;
-        $fields = array();
+        $fields        = array();
 
         // Add the columns
         foreach ($columnNames as $columnName => $def) {
-            $type = $def['type'];
-            $length = isset($def['length']) ? $def['length'] : null;
+            $type    = $def['type'];
+            $length  = isset($def['length']) ? $def['length'] : null;
             $options = isset($def['options']) ? $def['options'] : array();
 
             $this->addColumn($tableName, $columnName, $type, $length, $options);
@@ -258,11 +270,11 @@ abstract class Doctrine_Migration_Base
             $fields[$columnName] = array();
 
             if (isset($def['autoincrement'])) {
-                $autoincrement = true;
-                $autoincrementColumn = $columnName;
-                $autoincrementType = $type;
-                $autoincrementLength = $length;
-                $autoincrementOptions = $options;
+                $autoincrement                         = true;
+                $autoincrementColumn                   = $columnName;
+                $autoincrementType                     = $type;
+                $autoincrementLength                   = $length;
+                $autoincrementOptions                  = $options;
                 $autoincrementOptions['autoincrement'] = true;
             }
         }
@@ -270,7 +282,7 @@ abstract class Doctrine_Migration_Base
         // Create the primary constraint for the columns
         $this->createConstraint($tableName, null, array(
             'primary' => true,
-            'fields' => $fields
+            'fields'  => $fields
         ));
 
         // If auto increment change the column to be so
@@ -298,7 +310,7 @@ abstract class Doctrine_Migration_Base
      *  * Removing columns (removeColumn())
      *
      * @param string $tableName     Name of the table
-     * @param string $columnNames   Array of column names and column definitions
+     * @param array $columnNames   Array of column names and column definitions
      * @return void
      */
     public function dropPrimaryKey($tableName, $columnNames)
@@ -333,7 +345,7 @@ abstract class Doctrine_Migration_Base
     public function foreignKey($upDown, $tableName, $name, array $definition = array())
     {
         $definition['name'] = $name;
-        $options = get_defined_vars();
+        $options            = get_defined_vars();
 
         $this->_addChange('created_foreign_key', $options);
     }
@@ -377,7 +389,7 @@ abstract class Doctrine_Migration_Base
     public function column($upDown, $tableName, $columnName, $type = null, $length = null, array $options = array())
     {
         $options = get_defined_vars();
-        if ( ! isset($options['options']['length'])) {
+        if (! isset($options['options']['length'])) {
             $options['options']['length'] = $length;
         }
         $options = array_merge($options, $options['options']);
@@ -424,7 +436,7 @@ abstract class Doctrine_Migration_Base
     public function renameColumn($tableName, $oldColumnName, $newColumnName)
     {
         $options = get_defined_vars();
-        
+
         $this->_addChange('renamed_column', $options);
     }
 
@@ -440,7 +452,7 @@ abstract class Doctrine_Migration_Base
      */
     public function changeColumn($tableName, $columnName, $type = null, $length = null, array $options = array())
     {
-        $options = get_defined_vars();
+        $options                      = get_defined_vars();
         $options['options']['length'] = $length;
 
         $this->_addChange('changed_column', $options);
@@ -458,7 +470,7 @@ abstract class Doctrine_Migration_Base
     public function index($upDown, $tableName, $indexName, array $definition = array())
     {
         $options = get_defined_vars();
-        
+
         $this->_addChange('created_index', $options);
     }
 
@@ -487,18 +499,30 @@ abstract class Doctrine_Migration_Base
         $this->index('down', $tableName, $indexName);
     }
 
+    /**
+     * @return void
+     */
     public function preUp()
     {
     }
 
+    /**
+     * @return void
+     */
     public function postUp()
     {
     }
 
+    /**
+     * @return void
+     */
     public function preDown()
     {
     }
 
+    /**
+     * @return void
+     */
     public function postDown()
     {
     }

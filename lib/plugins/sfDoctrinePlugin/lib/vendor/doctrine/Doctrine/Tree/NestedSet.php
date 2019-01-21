@@ -33,13 +33,20 @@
  */
 class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Interface
 {
+    /**
+     * @var Doctrine_Query
+     */
     private $_baseQuery;
-    private $_baseAlias = "base";
+
+    /**
+     * @var string
+     */
+    private $_baseAlias = 'base';
 
     /**
      * constructor, creates tree with reference to table and sets default root options
      *
-     * @param object $table                     instance of Doctrine_Table
+     * @param Doctrine_Table $table                     instance of Doctrine_Table
      * @param array $options                    options
      */
     public function __construct(Doctrine_Table $table, $options)
@@ -57,6 +64,7 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      * used to define table attributes required for the NestetSet implementation
      * adds lft and rgt columns for corresponding left and right values
      *
+     * @return void
      */
     public function setTableDefinition()
     {
@@ -82,27 +90,28 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      * the records id will be assigned to the root id. You must use numeric columns for the id
      * and root id columns.
      *
-     * @param object $record        instance of Doctrine_Record
+     * @param Doctrine_Record $record        instance of Doctrine_Record
+     * @return Doctrine_Record
      */
     public function createRoot(Doctrine_Record $record = null)
     {
         if ($this->getAttribute('hasManyRoots')) {
-            if ( ! $record || ( ! $record->exists() && ! $record->getNode()->getRootValue())
+            if (! $record || (! $record->exists() && ! $record->getNode()->getRootValue())
                     || $record->getTable()->isIdentifierComposite()) {
-                throw new Doctrine_Tree_Exception("Node must have a root id set or must "
-                        . " be persistent and have a single-valued numeric primary key in order to"
-                        . " be created as a root node. Automatic assignment of a root id on"
-                        . " transient/new records is no longer supported.");
+                throw new Doctrine_Tree_Exception('Node must have a root id set or must '
+                        . ' be persistent and have a single-valued numeric primary key in order to'
+                        . ' be created as a root node. Automatic assignment of a root id on'
+                        . ' transient/new records is no longer supported.');
             }
-            
+
             if ($record->exists() && ! $record->getNode()->getRootValue()) {
                 // Default: root_id = id
                 $identifier = $record->getTable()->getIdentifier();
                 $record->getNode()->setRootValue($record->get($identifier));
             }
         }
-        
-        if ( ! $record) {
+
+        if (! $record) {
             $record = $this->table->create();
         }
 
@@ -119,6 +128,7 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      * Fetches a/the root node.
      *
      * @param integer $rootId
+     * @return false|Doctrine_Record
      * @todo Better $rootid = null and exception if $rootId == null && hasManyRoots?
      *       Fetching with id = 1 is too magical and cant work reliably anyway.
      */
@@ -128,7 +138,7 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
         $q = $q->addWhere($this->_baseAlias . '.lft = ?', 1);
 
         // if tree has many roots, then specify root id
-        $q = $this->returnQueryWithRootId($q, $rootId);
+        $q    = $this->returnQueryWithRootId($q, $rootId);
         $data = $q->execute();
 
         if (count($data) <= 0) {
@@ -136,13 +146,13 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
         }
 
         if ($data instanceof Doctrine_Collection) {
-            $root = $data->getFirst();
+            $root          = $data->getFirst();
             $root['level'] = 0;
-        } else if (is_array($data)) {
-            $root = array_shift($data);
+        } elseif (is_array($data)) {
+            $root          = array_shift($data);
             $root['level'] = 0;
         } else {
-            throw new Doctrine_Tree_Exception("Unexpected data structure returned.");
+            throw new Doctrine_Tree_Exception('Unexpected data structure returned.');
         }
 
         return $root;
@@ -152,8 +162,8 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      * Fetches a tree.
      *
      * @param array $options  Options
-     * @param integer $fetchmode  One of the Doctrine_Core::HYDRATE_* constants.
-     * @return mixed          The tree or FALSE if the tree could not be found.
+     * @param integer $hydrationMode  One of the Doctrine_Core::HYDRATE_* constants.
+     * @return false|array|Doctrine_Collection          The tree or FALSE if the tree could not be found.
      */
     public function fetchTree($options = array(), $hydrationMode = null)
     {
@@ -162,19 +172,19 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
 
         $depth = isset($options['depth']) ? $options['depth'] : null;
 
-        $q->addWhere($this->_baseAlias . ".lft >= ?", 1);
+        $q->addWhere($this->_baseAlias . '.lft >= ?', 1);
 
         // if tree has many roots, then specify root id
         $rootId = isset($options['root_id']) ? $options['root_id'] : '1';
         if (is_array($rootId)) {
-            $q->addOrderBy($this->_baseAlias . "." . $this->getAttribute('rootColumnName') .
-                    ", " . $this->_baseAlias . ".lft ASC");
+            $q->addOrderBy($this->_baseAlias . '.' . $this->getAttribute('rootColumnName') .
+                    ', ' . $this->_baseAlias . '.lft ASC');
         } else {
-            $q->addOrderBy($this->_baseAlias . ".lft ASC");
+            $q->addOrderBy($this->_baseAlias . '.lft ASC');
         }
 
-        if ( ! is_null($depth)) { 
-            $q->addWhere($this->_baseAlias . ".level BETWEEN ? AND ?", array(0, $depth)); 
+        if (! is_null($depth)) {
+            $q->addWhere($this->_baseAlias . '.level BETWEEN ? AND ?', array(0, $depth));
         }
 
         $q = $this->returnQueryWithRootId($q, $rootId);
@@ -193,30 +203,32 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      *
      * @param mixed $pk              primary key as used by table::find() to locate node to traverse tree from
      * @param array $options         Options.
-     * @param integer $fetchmode  One of the Doctrine_Core::HYDRATE_* constants.
-     * @return mixed                 The branch or FALSE if the branch could not be found.
+     * @param integer $hydrationMode  One of the Doctrine_Core::HYDRATE_* constants.
+     * @return Doctrine_Collection|array|false                 The branch or FALSE if the branch could not be found.
      * @todo Only fetch the lft and rgt values of the initial record. more is not needed.
      */
     public function fetchBranch($pk, $options = array(), $hydrationMode = null)
     {
         $record = $this->table->find($pk);
-        if ( ! ($record instanceof Doctrine_Record) || !$record->exists()) {
+        if (! ($record instanceof Doctrine_Record) || !$record->exists()) {
             // TODO: if record doesn't exist, throw exception or similar?
             return false;
         }
 
         $depth = isset($options['depth']) ? $options['depth'] : null;
 
-        $q = $this->getBaseQuery();
+        $q      = $this->getBaseQuery();
         $params = array($record->get('lft'), $record->get('rgt'));
-        $q->addWhere($this->_baseAlias . ".lft >= ? AND " . $this->_baseAlias . ".rgt <= ?", $params)
-                ->addOrderBy($this->_baseAlias . ".lft asc");
+        $q->addWhere($this->_baseAlias . '.lft >= ? AND ' . $this->_baseAlias . '.rgt <= ?', $params)
+                ->addOrderBy($this->_baseAlias . '.lft asc');
 
-        if ( ! is_null($depth)) { 
-            $q->addWhere($this->_baseAlias . ".level BETWEEN ? AND ?", array($record->get('level'), $record->get('level')+$depth)); 
+        if (! is_null($depth)) {
+            $q->addWhere($this->_baseAlias . '.level BETWEEN ? AND ?', array($record->get('level'), $record->get('level') + $depth));
         }
 
-        $q = $this->returnQueryWithRootId($q, $record->getNode()->getRootValue());
+        /** @var Doctrine_Node_NestedSet $node */
+        $node = $record->getNode();
+        $q    = $this->returnQueryWithRootId($q, $node->getRootValue());
 
         return $q->execute(array(), $hydrationMode);
     }
@@ -237,18 +249,20 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
     /**
      * returns parsed query with root id where clause added if applicable
      *
-     * @param object    $query    Doctrine_Query
-     * @param integer   $root_id  id of destination root
+     * @param Doctrine_Query    $query
+     * @param integer|array   $rootId  id of destination root
      * @return Doctrine_Query
      */
     public function returnQueryWithRootId($query, $rootId = 1)
     {
         if ($root = $this->getAttribute('rootColumnName')) {
             if (is_array($rootId)) {
-               $query->addWhere($root . ' IN (' . implode(',', array_fill(0, count($rootId), '?')) . ')',
-                       $rootId);
+                $query->addWhere(
+                   $root . ' IN (' . implode(',', array_fill(0, count($rootId), '?')) . ')',
+                       $rootId
+               );
             } else {
-               $query->addWhere($root . ' = ?', $rootId);
+                $query->addWhere($root . ' = ?', $rootId);
             }
         }
 
@@ -258,20 +272,18 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
     /**
      * Enter description here...
      *
-     * @param array $options
-     * @return unknown
+     * @return Doctrine_Query
      */
     public function getBaseQuery()
     {
-        if ( ! isset($this->_baseQuery)) {
+        if (! isset($this->_baseQuery)) {
             $this->_baseQuery = $this->_createBaseQuery();
         }
         return $this->_baseQuery->copy();
     }
 
     /**
-     * Enter description here...
-     *
+     * @return string
      */
     public function getBaseAlias()
     {
@@ -281,11 +293,12 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
     /**
      * Enter description here...
      *
+     * @return Doctrine_Query
      */
     private function _createBaseQuery()
     {
-        $this->_baseAlias = "base";
-        $q = Doctrine_Core::getTable($this->getBaseComponent())
+        $this->_baseAlias = 'base';
+        $q                = Doctrine_Core::getTable($this->getBaseComponent())
             ->createQuery($this->_baseAlias)
             ->select($this->_baseAlias . '.*');
         return $q;
@@ -295,13 +308,15 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
      * Enter description here...
      *
      * @param Doctrine_Query $query
+     *
+     * @return void
      */
     public function setBaseQuery(Doctrine_Query $query)
     {
         $this->_baseAlias = $query->getRootAlias();
-        $query->addSelect($this->_baseAlias . ".lft, " . $this->_baseAlias . ".rgt, ". $this->_baseAlias . ".level");
+        $query->addSelect($this->_baseAlias . '.lft, ' . $this->_baseAlias . '.rgt, ' . $this->_baseAlias . '.level');
         if ($this->getAttribute('rootColumnName')) {
-            $query->addSelect($this->_baseAlias . "." . $this->getAttribute('rootColumnName'));
+            $query->addSelect($this->_baseAlias . '.' . $this->getAttribute('rootColumnName'));
         }
         $this->_baseQuery = $query;
     }
@@ -309,6 +324,7 @@ class Doctrine_Tree_NestedSet extends Doctrine_Tree implements Doctrine_Tree_Int
     /**
      * Enter description here...
      *
+     * @return void
      */
     public function resetBaseQuery()
     {

@@ -54,7 +54,7 @@ class Doctrine_Locator_Injectable
      * setLocator
      * this method can be used for setting the locator object locally
      *
-     * @param Doctrine_Locator                the locator object
+     * @param Doctrine_Locator   $locator             the locator object
      * @return Doctrine_Locator_Injectable    this instance
      */
     public function setLocator(Doctrine_Locator $locator)
@@ -66,7 +66,7 @@ class Doctrine_Locator_Injectable
     /**
      * getLocator
      * returns the locator associated with this object
-     * 
+     *
      * if there are no locator locally associated then
      * this method tries to fetch the current global locator
      *
@@ -74,9 +74,8 @@ class Doctrine_Locator_Injectable
      */
     public function getLocator()
     {
-        if ( ! isset($this->_locator)) {
+        if (! isset($this->_locator)) {
             $this->_locator = Doctrine_Locator::instance();
-
         }
         return $this->_locator;
     }
@@ -101,7 +100,7 @@ class Doctrine_Locator_Injectable
             } else {
                 // get the name of the concrete implementation
                 $concreteImpl = $this->_resources[$name];
-                
+
                 return $this->getLocator()->locate($concreteImpl);
             }
         } else {
@@ -114,14 +113,14 @@ class Doctrine_Locator_Injectable
      * binds a resource to a name
      *
      * @param string $name      the name of the resource to bind
-     * @param mixed $value      the value of the resource
-     * @return Doctrine_Locator   this object
+     * @param mixed $resource      the value of the resource
+     * @return $this   this object
      */
     public function bind($name, $resource)
     {
         $this->_resources[$name] = $resource;
-        
-        return $this;    
+
+        return $this;
     }
 
     /**

@@ -32,6 +32,9 @@
  */
 class Doctrine_Validator_Usstate extends Doctrine_Validator_Driver
 {
+    /**
+     * @var bool[]
+     */
     private static $states = array(
                 'AK' => true,
                 'AL' => true,
@@ -87,6 +90,9 @@ class Doctrine_Validator_Usstate extends Doctrine_Validator_Driver
                 'WV' => true,
                 'WY' => true
             );
+    /**
+     * @return bool[]
+     */
     public function getStates()
     {
         return self::$states;
@@ -95,7 +101,7 @@ class Doctrine_Validator_Usstate extends Doctrine_Validator_Driver
     /**
      * checks if given value is a valid US state code
      *
-     * @param string $args
+     * @param string|null $value
      * @return boolean
      */
     public function validate($value)

@@ -32,7 +32,11 @@
  */
 class Doctrine_Query_Limit extends Doctrine_Query_Part
 {
-    public function parse($limit) 
+    /**
+     * @param string|int $limit
+     * @return int
+     */
+    public function parse($limit)
     {
         return (int) $limit;
     }

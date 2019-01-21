@@ -36,16 +36,17 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
      * DQL GROUP BY PARSER
      * parses the group by part of the query string
      *
-     * @param string $str
-     * @return void
+     * @param string $clause
+     * @param bool $append
+     * @return string
      */
     public function parse($clause, $append = false)
     {
         $terms = $this->_tokenizer->clauseExplode($clause, array(' ', '+', '-', '*', '/', '<', '>', '=', '>=', '<='));
-        $str = '';
+        $str   = '';
 
         foreach ($terms as $term) {
-            $pos = strpos($term[0], '(');
+            $pos      = strpos($term[0], '(');
             $hasComma = false;
 
             if ($pos !== false) {
@@ -54,16 +55,15 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
                 $term[0] = $this->query->parseFunctionExpression($term[0]);
             } else {
                 if (substr($term[0], 0, 1) !== "'" && substr($term[0], -1) !== "'") {
-
                     if (strpos($term[0], '.') !== false) {
-                        if ( ! is_numeric($term[0])) {
+                        if (! is_numeric($term[0])) {
                             $e = explode('.', $term[0]);
 
                             $field = array_pop($e);
-                            
+
                             // Check if field name still has comma
                             if (($pos = strpos($field, ',')) !== false) {
-                                $field = substr($field, 0, $pos);
+                                $field    = substr($field, 0, $pos);
                                 $hasComma = true;
                             }
 
@@ -90,7 +90,7 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
                                 $field = $table->getColumnName($field);
 
                                 // check column existence
-                                if ( ! $def) {
+                                if (! $def) {
                                     throw new Doctrine_Query_Exception('Unknown column ' . $field);
                                 }
 
@@ -104,22 +104,21 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
                                 $term[0] = $conn->quoteIdentifier($tableAlias) . '.' . $conn->quoteIdentifier($field);
                             } else {
                                 // build sql expression
-                                $field = $this->query->getRoot()->getColumnName($field);
+                                $field   = $this->query->getRoot()->getColumnName($field);
                                 $term[0] = $conn->quoteIdentifier($field);
                             }
                         }
                     } else {
-                        if ( ! empty($term[0]) &&
+                        if (! empty($term[0]) &&
                              ! is_numeric($term[0]) &&
                             $term[0] !== '?' && substr($term[0], 0, 1) !== ':') {
-
                             $componentAlias = $this->query->getRootAlias();
 
                             $found = false;
-                            
+
                             // Check if field name still has comma
                             if (($pos = strpos($term[0], ',')) !== false) {
-                                $term[0] = substr($term[0], 0, $pos);
+                                $term[0]  = substr($term[0], 0, $pos);
                                 $hasComma = true;
                             }
 
@@ -144,7 +143,7 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
                                     }
 
                                     $tableAlias = $this->query->getSqlTableAlias($componentAlias);
-                                    $conn = $this->query->getConnection();
+                                    $conn       = $this->query->getConnection();
 
                                     if ($this->query->getType() === Doctrine_Query::SELECT) {
                                         // build sql expression
@@ -159,7 +158,7 @@ class Doctrine_Query_Groupby extends Doctrine_Query_Part
                                 }
                             }
 
-                            if ( ! $found) {
+                            if (! $found) {
                                 $term[0] = $this->query->getSqlAggregateAlias($term[0]);
                             }
                         }

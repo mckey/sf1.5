@@ -38,24 +38,21 @@ class Doctrine_Parser_Yml extends Doctrine_Parser
      * Dump an array of data to a specified path or return
      *
      * @throws Doctrine_Parser_Exception dumping error
-     * @param  string $array Array of data to dump to yaml
+     * @param  array $array Array of data to dump to yaml
      * @param  string $path  Path to dump the yaml to
-     * @return string $yaml
-     * @return void
+     * @return int|false|string
      */
     public function dumpData($array, $path = null, $charset = null)
     {
-
         try {
-          $data = sfYaml::dump($array, 6);
+            $data = sfYaml::dump($array, 6);
 
-          return $this->doDump($data, $path);
+            return $this->doDump($data, $path);
+        } catch (Exception $e) {
+            // rethrow the exceptions
+            $rethrowed_exception = new Doctrine_Parser_Exception($e->getMessage(), $e->getCode());
 
-        } catch(InvalidArgumentException $e) {
-          // rethrow the exceptions
-          $rethrowed_exception = new Doctrine_Parser_Exception($e->getMessage(), $e->getCode());
-
-          throw $rethrowed_exception;
+            throw $rethrowed_exception;
         }
     }
 
@@ -68,24 +65,23 @@ class Doctrine_Parser_Yml extends Doctrine_Parser
      * @param  string  $path  Path to load yaml data from
      * @return array   $array Array of parsed yaml data
      */
-    public function loadData($path, $charset = 'UTF-8')
+    public function loadData($path)
     {
         try {
-          /*
-           * I still use the doLoad method even if sfYaml can load yml from a file
-           * since this way Doctrine can handle file on it own.
-           */
-          $contents = $this->doLoad($path);
+            /*
+             * I still use the doLoad method even if Yaml can load yml from a file
+             * since this way Doctrine can handle file on it own.
+             */
+            $contents = $this->doLoad($path);
 
-          $array = sfYaml::load($contents, $charset);
+            $array = sfYaml::load($contents);
 
-          return $array;
+            return $array;
+        } catch (Exception $e) {
+            // rethrow the exceptions
+            $rethrowed_exception = new Doctrine_Parser_Exception($e->getMessage(), $e->getCode());
 
-        } catch(InvalidArgumentException $e) {
-          // rethrow the exceptions
-          $rethrowed_exception = new Doctrine_Parser_Exception($e->getMessage(), $e->getCode());
-
-          throw $rethrowed_exception;
+            throw $rethrowed_exception;
         }
     }
 }

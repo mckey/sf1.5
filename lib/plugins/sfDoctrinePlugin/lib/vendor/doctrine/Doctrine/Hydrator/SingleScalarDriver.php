@@ -32,6 +32,9 @@
  */
 class Doctrine_Hydrator_SingleScalarDriver extends Doctrine_Hydrator_Abstract
 {
+    /**
+     * @return array|scalar
+     */
     public function hydrateResultSet($stmt)
     {
         $result = array();

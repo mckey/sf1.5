@@ -39,23 +39,28 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
     private static $validators = array();
 
     /**
+     * This was undefined, added for static analysis and set to public so api isn't changed
+     * @var array
+     */
+    public $stack;
+
+    /**
      * Get a validator instance for the passed $name
      *
      * @param  string   $name  Name of the validator or the validator class name
-     * @return Doctrine_Validator_Interface $validator
+     * @return Doctrine_Validator_Driver $validator
      */
     public static function getValidator($name)
     {
-        if ( ! isset(self::$validators[$name])) {
+        if (! isset(self::$validators[$name])) {
             $class = 'Doctrine_Validator_' . ucwords(strtolower($name));
             if (class_exists($class)) {
                 self::$validators[$name] = new $class;
-            } else if (class_exists($name)) {
+            } elseif (class_exists($name)) {
                 self::$validators[$name] = new $name;
             } else {
                 throw new Doctrine_Exception("Validator named '$name' not available.");
             }
-
         }
         return self::$validators[$name];
     }
@@ -84,31 +89,31 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
      *
      * @param  string  $value         Value to validate
      * @param  string  $type          Type of field being validated
-     * @param  string  $maximumLength Maximum length allowed for the column
+     * @param  string|null|int  $maximumLength Maximum length allowed for the column
      * @return boolean $success       True/false for whether the value passed validation
      */
     public static function validateLength($value, $type, $maximumLength)
     {
-        if ($maximumLength === null ) {
+        if ($maximumLength === null) {
             return true;
         }
         if ($type == 'timestamp' || $type == 'integer' || $type == 'enum') {
             return true;
-        } else if ($type == 'array' || $type == 'object') {
+        } elseif ($type == 'array' || $type == 'object') {
             $length = strlen(serialize($value));
-        } else if ($type == 'decimal' || $type == 'float') {
+        } elseif ($type == 'decimal' || $type == 'float') {
             $value = abs($value);
 
-            $localeInfo = localeconv();
+            $localeInfo   = localeconv();
             $decimalPoint = $localeInfo['mon_decimal_point'] ? $localeInfo['mon_decimal_point'] : $localeInfo['decimal_point'];
-            $e = explode($decimalPoint, $value);
+            $e            = explode($decimalPoint, (string) $value);
 
             $length = strlen($e[0]);
-            
+
             if (isset($e[1])) {
                 $length = $length + strlen($e[1]);
             }
-        } else if ($type == 'blob') {
+        } elseif ($type == 'blob') {
             $length = strlen($value);
         } else {
             $length = self::getStringLength($value);
@@ -122,7 +127,7 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
     /**
      * Get length of passed string. Will use multibyte character functions if they exist
      *
-     * @param string $string 
+     * @param string $string
      * @return integer $length
      */
     public static function getStringLength($string)
@@ -151,17 +156,19 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
      * @param  string $type  Type of the variable expected
      * @return boolean
      */
-     public static function isValidType($var, $type)
-     {
-         if ($var instanceof Doctrine_Expression) {
-             return true;
-         } else if ($var === null) {
-             return true;
-         } else if (is_object($var)) {
-             return $type == 'object';
-         }
+    public static function isValidType($var, $type)
+    {
+        if ($var instanceof Doctrine_Expression) {
+            return true;
+        } elseif ($var === null) {
+            return true;
+        } elseif (is_object($var)) {
+            return $type == 'object';
+        } elseif (is_array($var)) {
+            return $type == 'array';
+        }
 
-         switch ($type) {
+        switch ($type) {
              case 'float':
              case 'double':
              case 'decimal':
@@ -182,12 +189,15 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
              case 'boolean':
                  return is_bool($var) || (is_numeric($var) && ($var == 0 || $var == 1));
              case 'timestamp':
+                 /** @var Doctrine_Validator_Timestamp $validator */
                  $validator = self::getValidator('timestamp');
                  return $validator->validate($var);
              case 'time':
+                 /** @var Doctrine_Validator_Time $validator */
                  $validator = self::getValidator('time');
                  return $validator->validate($var);
              case 'date':
+                 /** @var Doctrine_Validator_Date $validator */
                  $validator = self::getValidator('date');
                  return $validator->validate($var);
              case 'enum':
@@ -197,5 +207,5 @@ class Doctrine_Validator extends Doctrine_Locator_Injectable
              default:
                  return true;
          }
-     }
+    }
 }

@@ -35,14 +35,14 @@ class Doctrine_Transaction_Sqlite extends Doctrine_Transaction
     /**
      * Set the transacton isolation level.
      *
-     * @param   string  standard isolation level
+     * @param   string  $isolation standard isolation level
      *                  READ UNCOMMITTED (allows dirty reads)
      *                  READ COMMITTED (prevents dirty reads)
      *                  REPEATABLE READ (prevents nonrepeatable reads)
      *                  SERIALIZABLE (prevents phantom reads)
      * @throws PDOException                         if something fails at the PDO level
      * @throws Doctrine_Transaction_Exception       if using unknown isolation level
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     public function setIsolation($isolation)
     {

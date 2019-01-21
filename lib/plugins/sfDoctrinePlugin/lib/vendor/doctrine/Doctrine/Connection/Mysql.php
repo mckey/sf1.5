@@ -30,6 +30,8 @@
  * @version     $Revision: 7490 $
  * @link        www.doctrine-project.org
  * @since       1.0
+ *
+ * @property Doctrine_DataDict_Mysql $dataDict
  */
 class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
 {
@@ -42,7 +44,7 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
      * the constructor
      *
      * @param Doctrine_Manager $manager
-     * @param PDO|Doctrine_Adapter $adapter     database handler
+     * @param PDO|Doctrine_Adapter_Interface $adapter     database handler
      */
     public function __construct(Doctrine_Manager $manager, $adapter)
     {
@@ -68,13 +70,13 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
                           'pattern_escaping'     => true
                           );
 
-        $this->properties['string_quoting'] = array('start' => "'",
-                                                    'end' => "'",
-                                                    'escape' => '\\',
+        $this->properties['string_quoting'] = array('start'          => "'",
+                                                    'end'            => "'",
+                                                    'escape'         => '\\',
                                                     'escape_pattern' => '\\');
 
-        $this->properties['identifier_quoting'] = array('start' => '`',
-                                                        'end' => '`',
+        $this->properties['identifier_quoting'] = array('start'  => '`',
+                                                        'end'    => '`',
                                                         'escape' => '`');
 
         $this->properties['sql_comments'] = array(
@@ -96,15 +98,15 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
      * @see Doctrine_Connection :: connect();
      * @return boolean connected
      */
-     public function connect()
-     {
-         $connected = parent::connect();
-         $this->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+    public function connect()
+    {
+        $connected = parent::connect();
+        $this->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
 
-         return $connected;
-     }
-    
-    
+        return $connected;
+    }
+
+
     /**
      * returns the name of the connected database
      *
@@ -118,7 +120,9 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
     /**
      * Set the charset on the current connection
      *
-     * @param string    charset
+     * @param string    $charset
+     *
+     * @return void
      */
     public function setCharset($charset)
     {
@@ -140,7 +144,7 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
      *
      * @access public
      *
-     * @param string $table name of the table on which the REPLACE query will
+     * @param Doctrine_Table $table name of the table on which the REPLACE query will
      *  be executed.
      * @param array $fields associative array that describes the fields and the
      *  values that will be inserted or updated in the specified table. The
@@ -198,12 +202,12 @@ class Doctrine_Connection_Mysql extends Doctrine_Connection_Common
         }
 
         $columns = array();
-        $values = array();
-        $params = array();
+        $values  = array();
+        $params  = array();
         foreach ($fields as $fieldName => $value) {
             $columns[] = $table->getColumnName($fieldName);
-            $values[] = '?';
-            $params[] = $value;
+            $values[]  = '?';
+            $params[]  = $value;
         }
 
         $query = 'REPLACE INTO ' . $this->quoteIdentifier($table->getTableName()) . ' (' . implode(',', $columns) . ') VALUES (' . implode(',', $values) . ')';

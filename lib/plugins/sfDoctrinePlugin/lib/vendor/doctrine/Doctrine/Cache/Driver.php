@@ -41,7 +41,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
     /**
      * Configure cache driver with an array of options
      *
-     * @param array $_options      an array of options
+     * @param array $options      an array of options
      */
     public function __construct($options = array())
     {
@@ -72,7 +72,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
      */
     public function getOption($option)
     {
-        if ( ! isset($this->_options[$option])) {
+        if (! isset($this->_options[$option])) {
             return null;
         }
 
@@ -109,7 +109,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
      *
      * @param string $id        cache id
      * @param string $data      data to cache
-     * @param int $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
+     * @param int|false $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
      * @return boolean true if no problem
      */
     public function save($id, $data, $lifeTime = false)
@@ -124,7 +124,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
      * Note: This method accepts wildcards with the * character
      *
      * @param string $id cache id
-     * @return boolean true if no problem
+     * @return int|bool
      */
     public function delete($id)
     {
@@ -146,7 +146,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
     public function deleteByRegex($regex)
     {
         $count = 0;
-        $keys = $this->_getCacheKeys();
+        $keys  = $this->_getCacheKeys();
         if (is_array($keys)) {
             foreach ($keys as $key) {
                 if (preg_match($regex, $key)) {
@@ -167,7 +167,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
     public function deleteByPrefix($prefix)
     {
         $count = 0;
-        $keys = $this->_getCacheKeys();
+        $keys  = $this->_getCacheKeys();
         if (is_array($keys)) {
             foreach ($keys as $key) {
                 if (strpos($key, $prefix) === 0) {
@@ -188,7 +188,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
     public function deleteBySuffix($suffix)
     {
         $count = 0;
-        $keys = $this->_getCacheKeys();
+        $keys  = $this->_getCacheKeys();
         if (is_array($keys)) {
             foreach ($keys as $key) {
                 if (substr($key, -1 * strlen($suffix)) == $suffix) {
@@ -202,10 +202,10 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
 
     /**
      * Delete all cache entries from the cache driver
-     * 
+     *
      * @return integer $count The number of deleted cache entries
      */
-    public function deleteAll() 
+    public function deleteAll()
     {
         $count = 0;
         if (is_array($keys = $this->_getCacheKeys())) {
@@ -227,7 +227,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
     {
         $prefix = isset($this->_options['prefix']) ? $this->_options['prefix'] : '';
 
-        if ( ! $prefix || strpos($id, $prefix) === 0) {
+        if (! $prefix || strpos($id, $prefix) === 0) {
             return $id;
         } else {
             return $prefix . $id;
@@ -264,7 +264,7 @@ abstract class Doctrine_Cache_Driver implements Doctrine_Cache_Interface
      *
      * @param string $id        cache id
      * @param string $data      data to cache
-     * @param int $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
+     * @param int|false $lifeTime     if != false, set a specific lifetime for this cache record (null => infinite lifeTime)
      * @return boolean true if no problem
      */
     abstract protected function _doSave($id, $data, $lifeTime = false);

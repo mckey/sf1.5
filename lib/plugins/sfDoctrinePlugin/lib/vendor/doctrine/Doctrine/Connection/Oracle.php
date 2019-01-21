@@ -37,6 +37,9 @@ class Doctrine_Connection_Oracle extends Doctrine_Connection_Common
      */
     protected $driverName = 'Oracle';
 
+    /**
+     * @param PDO|Doctrine_Adapter_Interface|array $adapter
+     */
     public function __construct(Doctrine_Manager $manager, $adapter)
     {
         $this->supported = array(
@@ -59,15 +62,15 @@ class Doctrine_Connection_Oracle extends Doctrine_Connection_Common
                           'identifier_quoting'   => true,
                           'pattern_escaping'     => true,
                           );
-        
+
         $this->properties['sql_file_delimiter']    = "\n/\n";
         $this->properties['number_max_precision']  = 38;
         $this->properties['max_identifier_length'] = 30;
 
         parent::__construct($manager, $adapter);
-        
+
         // moving properties to params to make them changeable by user
-        // VARCHAR2 allowed length is 4000 BYTE. For UTF8 strings is better to use 1000 CHAR 
+        // VARCHAR2 allowed length is 4000 BYTE. For UTF8 strings is better to use 1000 CHAR
         $this->setParam('varchar2_max_length', 4000);
         // Oracle's default unit for char data types is BYTE. For UTF8 string it is better to use CHAR
         $this->setParam('char_unit', null);
@@ -86,58 +89,79 @@ class Doctrine_Connection_Oracle extends Doctrine_Connection_Common
      * Adds an driver-specific LIMIT clause to the query
      *
      * @param string $query         query to modify
-     * @param integer $limit        limit the number of rows
-     * @param integer $offset       start reading from given offset
+     * @param integer|false $limit        limit the number of rows
+     * @param integer|false $offset       start reading from given offset
+     * @param bool $isManip
      * @return string               the modified query
      */
     public function modifyLimitQuery($query, $limit = false, $offset = false, $isManip = false)
     {
         return $this->_createLimitSubquery($query, $limit, $offset);
     }
-    
+
+    /**
+     * @param  string $query
+     * @param  int|bool $limit
+     * @param  int|bool $offset
+     * @param  string $column
+     * @return string
+     */
     private function _createLimitSubquery($query, $limit, $offset, $column = null)
     {
-        $limit = (int) $limit;
+        $limit  = (int) $limit;
         $offset = (int) $offset;
         if (preg_match('/^\s*SELECT/i', $query)) {
-            if ( ! preg_match('/\sFROM\s/i', $query)) {
-                $query .= " FROM dual";
+            if (! preg_match('/\sFROM\s/i', $query)) {
+                $query .= ' FROM dual';
             }
             if ($limit > 0) {
-                $max = $offset + $limit;
+                $max    = $offset + $limit;
                 $column = $column === null ? '*' : $this->quoteIdentifier($column);
                 if ($offset > 0) {
-                    $min = $offset + 1;
-                    $query = 'SELECT '.$this->quoteIdentifier('b').'.'.$column.' FROM ( '.
-                                 'SELECT '.$this->quoteIdentifier('a').'.*, ROWNUM AS doctrine_rownum FROM ( '
-                                   . $query . ' ) ' . $this->quoteIdentifier('a') . ' '.
-                              ' ) ' . $this->quoteIdentifier('b') . ' '.
-                              'WHERE doctrine_rownum BETWEEN ' . $min .  ' AND ' . $max;
+                    $min   = $offset + 1;
+                    $query = 'SELECT ' . $this->quoteIdentifier('b') . '.' . $column . ' FROM ( ' .
+                                 'SELECT ' . $this->quoteIdentifier('a') . '.*, ROWNUM AS doctrine_rownum FROM ( '
+                                   . $query . ' ) ' . $this->quoteIdentifier('a') . ' ' .
+                              ' ) ' . $this->quoteIdentifier('b') . ' ' .
+                              'WHERE doctrine_rownum BETWEEN ' . $min . ' AND ' . $max;
                 } else {
-                    $query = 'SELECT a.'.$column.' FROM ( ' . $query .' ) a WHERE ROWNUM <= ' . $max;
+                    $query = 'SELECT a.' . $column . ' FROM ( ' . $query . ' ) a WHERE ROWNUM <= ' . $max;
                 }
             }
         }
         return $query;
     }
-    
+
     /**
      * Creates the SQL for Oracle that can be used in the subquery for the limit-subquery
      * algorithm.
+     * @param  string $query
+     * @param  bool $limit
+     * @param  bool $offset
+     * @param  bool $isManip
+     * @return string
      */
-    public function modifyLimitSubquery(Doctrine_Table $rootTable, $query, $limit = false,
-            $offset = false, $isManip = false)
-    {
+    public function modifyLimitSubquery(
+        Doctrine_Table $rootTable,
+        $query,
+        $limit = false,
+        $offset = false,
+        $isManip = false
+    ) {
         // NOTE: no composite key support
         $columnNames = $rootTable->getIdentifierColumnNames();
         if (count($columnNames) > 1) {
-            throw new Doctrine_Connection_Exception("Composite keys in LIMIT queries are "
-                    . "currently not supported.");
+            throw new Doctrine_Connection_Exception('Composite keys in LIMIT queries are '
+                    . 'currently not supported.');
         }
         $column = $columnNames[0];
         return $this->_createLimitSubquery($query, $limit, $offset, $column);
     }
 
+    /**
+     * @param  mixed $info
+     * @return self
+     */
     public function getTmpConnection($info)
     {
         return clone $this;
@@ -146,6 +170,7 @@ class Doctrine_Connection_Oracle extends Doctrine_Connection_Common
     /**
      * Override quote behaviour for boolean to fix issues with quoting of
      * boolean values.
+     * @return null|int|string
      */
     public function quote($input, $type = null)
     {
@@ -153,10 +178,10 @@ class Doctrine_Connection_Oracle extends Doctrine_Connection_Common
             if ($input === null) {
                 return null;
             } else {
-                return $input ? 1 : 0;    
+                return $input ? 1 : 0;
             }
         } else {
-            return parent::quote($input, $type);  
+            return parent::quote($input, $type);
         }
     }
 }

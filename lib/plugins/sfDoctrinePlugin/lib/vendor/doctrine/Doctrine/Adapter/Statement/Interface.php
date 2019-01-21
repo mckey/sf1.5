@@ -29,6 +29,9 @@
  * @link        www.doctrine-project.org
  * @since       1.0
  * @version     $Revision: 7490 $
+ *
+ * Cannot be defined on an interface
+ * @property string $queryString
  */
 interface Doctrine_Adapter_Statement_Interface
 {
@@ -45,7 +48,7 @@ interface Doctrine_Adapter_Statement_Interface
     public function bindColumn($column, $param, $type = null);
 
     /**
-     * Binds a value to a corresponding named or question mark 
+     * Binds a value to a corresponding named or question mark
      * placeholder in the SQL statement that was use to prepare the statement.
      *
      * @param mixed $param          Parameter identifier. For a prepared statement using named placeholders,
@@ -60,17 +63,17 @@ interface Doctrine_Adapter_Statement_Interface
     public function bindValue($param, $value, $type = null);
 
     /**
-     * Binds a PHP variable to a corresponding named or question mark placeholder in the 
+     * Binds a PHP variable to a corresponding named or question mark placeholder in the
      * SQL statement that was use to prepare the statement. Unlike Doctrine_Adapter_Statement_Interface->bindValue(),
-     * the variable is bound as a reference and will only be evaluated at the time 
+     * the variable is bound as a reference and will only be evaluated at the time
      * that Doctrine_Adapter_Statement_Interface->execute() is called.
      *
-     * Most parameters are input parameters, that is, parameters that are 
-     * used in a read-only fashion to build up the query. Some drivers support the invocation 
+     * Most parameters are input parameters, that is, parameters that are
+     * used in a read-only fashion to build up the query. Some drivers support the invocation
      * of stored procedures that return data as output parameters, and some also as input/output
      * parameters that both send in data and are updated to receive it.
      *
-     * @param mixed $param          Parameter identifier. For a prepared statement using named placeholders,
+     * @param mixed $column          Parameter identifier. For a prepared statement using named placeholders,
      *                              this will be a parameter name of the form :name. For a prepared statement
      *                              using question mark placeholders, this will be the 1-indexed position of the parameter
      *
@@ -94,8 +97,8 @@ interface Doctrine_Adapter_Statement_Interface
      */
     public function closeCursor();
 
-    /** 
-     * Returns the number of columns in the result set 
+    /**
+     * Returns the number of columns in the result set
      *
      * @return integer              Returns the number of columns in the result set represented
      *                              by the Doctrine_Adapter_Statement_Interface object. If there is no result set,
@@ -104,7 +107,7 @@ interface Doctrine_Adapter_Statement_Interface
     public function columnCount();
 
     /**
-     * Fetch the SQLSTATE associated with the last operation on the statement handle 
+     * Fetch the SQLSTATE associated with the last operation on the statement handle
      *
      * @see Doctrine_Adapter_Interface::errorCode()
      * @return string       error code string
@@ -143,10 +146,10 @@ interface Doctrine_Adapter_Statement_Interface
      *                                      This value must be one of the Doctrine_Core::FETCH_* constants,
      *                                      defaulting to Doctrine_Core::FETCH_BOTH
      *
-     * @param integer $cursorOrientation    For a PDOStatement object representing a scrollable cursor, 
-     *                                      this value determines which row will be returned to the caller. 
+     * @param integer $cursorOrientation    For a PDOStatement object representing a scrollable cursor,
+     *                                      this value determines which row will be returned to the caller.
      *                                      This value must be one of the Doctrine_Core::FETCH_ORI_* constants, defaulting to
-     *                                      Doctrine_Core::FETCH_ORI_NEXT. To request a scrollable cursor for your 
+     *                                      Doctrine_Core::FETCH_ORI_NEXT. To request a scrollable cursor for your
      *                                      Doctrine_Adapter_Statement_Interface object,
      *                                      you must set the Doctrine_Core::ATTR_CURSOR attribute to Doctrine_Core::CURSOR_SCROLL when you
      *                                      prepare the SQL statement with Doctrine_Adapter_Interface->prepare().
@@ -154,17 +157,19 @@ interface Doctrine_Adapter_Statement_Interface
      * @param integer $cursorOffset         For a Doctrine_Adapter_Statement_Interface object representing a scrollable cursor for which the
      *                                      $cursorOrientation parameter is set to Doctrine_Core::FETCH_ORI_ABS, this value specifies
      *                                      the absolute number of the row in the result set that shall be fetched.
-     *                                      
-     *                                      For a Doctrine_Adapter_Statement_Interface object representing a scrollable cursor for 
-     *                                      which the $cursorOrientation parameter is set to Doctrine_Core::FETCH_ORI_REL, this value 
-     *                                      specifies the row to fetch relative to the cursor position before 
+     *
+     *                                      For a Doctrine_Adapter_Statement_Interface object representing a scrollable cursor for
+     *                                      which the $cursorOrientation parameter is set to Doctrine_Core::FETCH_ORI_REL, this value
+     *                                      specifies the row to fetch relative to the cursor position before
      *                                      Doctrine_Adapter_Statement_Interface->fetch() was called.
      *
      * @return mixed
      */
-    public function fetch($fetchStyle = Doctrine_Core::FETCH_BOTH,
+    public function fetch(
+        $fetchStyle = Doctrine_Core::FETCH_BOTH,
                           $cursorOrientation = Doctrine_Core::FETCH_ORI_NEXT,
-                          $cursorOffset = null);
+                          $cursorOffset = null
+    );
 
     /**
      * Returns an array containing all of the result set rows
@@ -173,19 +178,16 @@ interface Doctrine_Adapter_Statement_Interface
      *                                      This value must be one of the Doctrine_Core::FETCH_* constants,
      *                                      defaulting to Doctrine_Core::FETCH_BOTH
      *
-     * @param integer $columnIndex          Returns the indicated 0-indexed column when the value of $fetchStyle is
-     *                                      Doctrine_Core::FETCH_COLUMN. Defaults to 0.
-     *
      * @return array
      */
-    public function fetchAll($fetchStyle = Doctrine_Core::FETCH_BOTH);
+    public function fetchAll($fetchStyle = Doctrine_Core::FETCH_BOTH, $colnum = 0);
 
     /**
      * Returns a single column from the next row of a
      * result set or FALSE if there are no more rows.
      *
-     * @param integer $columnIndex          0-indexed number of the column you wish to retrieve from the row. If no 
-     *                                      value is supplied, Doctrine_Adapter_Statement_Interface->fetchColumn() 
+     * @param integer $columnIndex          0-indexed number of the column you wish to retrieve from the row. If no
+     *                                      value is supplied, Doctrine_Adapter_Statement_Interface->fetchColumn()
      *                                      fetches the first column.
      *
      * @return string                       returns a single column in the next row of a result set.
@@ -195,19 +197,19 @@ interface Doctrine_Adapter_Statement_Interface
     /**
      * Fetches the next row and returns it as an object.
      *
-     * Fetches the next row and returns it as an object. This function is an alternative to 
+     * Fetches the next row and returns it as an object. This function is an alternative to
      * Doctrine_Adapter_Statement_Interface->fetch() with Doctrine_Core::FETCH_CLASS or Doctrine_Core::FETCH_OBJ style.
      *
-     * @param string $className             Name of the created class, defaults to stdClass. 
+     * @param string $className             Name of the created class, defaults to stdClass.
      * @param array $args                   Elements of this array are passed to the constructor.
      *
-     * @return mixed                        an instance of the required class with property names that correspond 
+     * @return mixed                        an instance of the required class with property names that correspond
      *                                      to the column names or FALSE in case of an error.
      */
     public function fetchObject($className = 'stdClass', $args = array());
 
     /**
-     * Retrieve a statement attribute 
+     * Retrieve a statement attribute
      *
      * @param integer $attribute
      * @see Doctrine_Core::ATTR_* constants
@@ -234,10 +236,10 @@ interface Doctrine_Adapter_Statement_Interface
 
     /**
      * Advances to the next rowset in a multi-rowset statement handle
-     * 
-     * Some database servers support stored procedures that return more than one rowset 
-     * (also known as a result set). The nextRowset() method enables you to access the second 
-     * and subsequent rowsets associated with a PDOStatement object. Each rowset can have a 
+     *
+     * Some database servers support stored procedures that return more than one rowset
+     * (also known as a result set). The nextRowset() method enables you to access the second
+     * and subsequent rowsets associated with a PDOStatement object. Each rowset can have a
      * different set of columns from the preceding rowset.
      *
      * @return boolean                      Returns TRUE on success or FALSE on failure.
@@ -245,12 +247,12 @@ interface Doctrine_Adapter_Statement_Interface
     public function nextRowset();
 
     /**
-     * rowCount() returns the number of rows affected by the last DELETE, INSERT, or UPDATE statement 
+     * rowCount() returns the number of rows affected by the last DELETE, INSERT, or UPDATE statement
      * executed by the corresponding object.
      *
-     * If the last SQL statement executed by the associated Statement object was a SELECT statement, 
-     * some databases may return the number of rows returned by that statement. However, 
-     * this behaviour is not guaranteed for all databases and should not be 
+     * If the last SQL statement executed by the associated Statement object was a SELECT statement,
+     * some databases may return the number of rows returned by that statement. However,
+     * this behaviour is not guaranteed for all databases and should not be
      * relied on for portable applications.
      *
      * @return integer                      Returns the number of rows.
@@ -267,7 +269,7 @@ interface Doctrine_Adapter_Statement_Interface
     public function setAttribute($attribute, $value);
 
     /**
-     * Set the default fetch mode for this statement 
+     * Set the default fetch mode for this statement
      *
      * @param integer $mode                 The fetch mode must be one of the Doctrine_Core::FETCH_* constants.
      * @return boolean                      Returns 1 on success or FALSE on failure.

@@ -40,7 +40,7 @@ class Doctrine_Data
      *
      * array of formats data can be in
      *
-     * @var string
+     * @var array
      */
     protected $_formats = array('csv', 'yml', 'xml');
 
@@ -56,9 +56,9 @@ class Doctrine_Data
     /**
      * directory
      *
-     * array of directory/yml paths or single directory/yml file
+     * single directory/yml file
      *
-     * @var string
+     * @var string|null
      */
     protected $_directory = null;
 
@@ -67,7 +67,7 @@ class Doctrine_Data
      *
      * specified array of models to use
      *
-     * @var string
+     * @var array
      */
     protected $_models = array();
 
@@ -76,11 +76,9 @@ class Doctrine_Data
      *
      * whether or not to export data to individual files instead of 1
      *
-     * @var string
+     * @var bool
      */
     protected $_exportIndividualFiles = false;
-
-    protected $_charset = 'UTF-8';
 
     /**
      * setFormat
@@ -100,7 +98,7 @@ class Doctrine_Data
      *
      * Get the current format we are working with
      *
-     * @return void
+     * @return string
      */
     public function getFormat()
     {
@@ -112,7 +110,7 @@ class Doctrine_Data
      *
      * Get array of available formats
      *
-     * @return void
+     * @return array
      */
     public function getFormats()
     {
@@ -123,6 +121,8 @@ class Doctrine_Data
      * setDirectory
      *
      * Set the array/string of directories or yml file paths
+     *
+     * @param string $directory
      *
      * @return void
      */
@@ -136,7 +136,7 @@ class Doctrine_Data
      *
      * Get directory for dumping/loading data from and to
      *
-     * @return void
+     * @return string|null
      */
     public function getDirectory()
     {
@@ -148,7 +148,7 @@ class Doctrine_Data
      *
      * Set the array of specified models to work with
      *
-     * @param string $models
+     * @param array $models
      * @return void
      */
     public function setModels($models)
@@ -161,7 +161,7 @@ class Doctrine_Data
      *
      * Get the array of specified models to work with
      *
-     * @return void
+     * @return array
      */
     public function getModels()
     {
@@ -173,6 +173,7 @@ class Doctrine_Data
      *
      * Set/Get whether or not to export individual files
      *
+     * @param bool $bool
      * @return bool $_exportIndividualFiles
      */
     public function exportIndividualFiles($bool = null)
@@ -184,16 +185,6 @@ class Doctrine_Data
         return $this->_exportIndividualFiles;
     }
 
-    public function setCharset($charset)
-    {
-        $this->_charset = $charset;
-    }
-
-    public function getCharset()
-    {
-        return $this->_charset;
-    }
-
     /**
      * exportData
      *
@@ -201,9 +192,9 @@ class Doctrine_Data
      *
      * @param string $directory
      * @param string $format
-     * @param string $models
-     * @param string $_exportIndividualFiles
-     * @return void
+     * @param array $models
+     * @param bool $_exportIndividualFiles
+     * @return int|false|string|null
      */
     public function exportData($directory, $format = 'yml', $models = array(), $_exportIndividualFiles = false)
     {
@@ -222,17 +213,17 @@ class Doctrine_Data
      *
      * @param string $directory
      * @param string $format
-     * @param string $models
+     * @param array $models
+     * @param bool $append
      * @return void
      */
-    public function importData($directory, $format = 'yml', $models = array(), $append = false, $charset = 'UTF-8')
+    public function importData($directory, $format = 'yml', $models = array(), $append = false)
     {
         $import = new Doctrine_Data_Import($directory);
         $import->setFormat($format);
         $import->setModels($models);
-        $import->setCharset($charset);
 
-        return $import->doImport($append);
+        $import->doImport($append);
     }
 
     /**
@@ -240,9 +231,9 @@ class Doctrine_Data
      *
      * Check if a fieldName on a Doctrine_Record is a relation, if it is we return that relationData
      *
-     * @param string $Doctrine_Record
+     * @param Doctrine_Record $record
      * @param string $fieldName
-     * @return void
+     * @return false|array
      */
     public function isRelation(Doctrine_Record $record, $fieldName)
     {
@@ -254,7 +245,6 @@ class Doctrine_Data
             if ($relationData['local'] === $fieldName) {
                 return $relationData;
             }
-
         }
 
         return false;
@@ -265,7 +255,7 @@ class Doctrine_Data
      *
      * Purge all data for loaded models or for the passed array of Doctrine_Records
      *
-     * @param string $models
+     * @param array $models
      * @return void
      */
     public function purge($models = null)
@@ -278,19 +268,15 @@ class Doctrine_Data
 
         $connections = array();
         foreach ($models as $model) {
-          $connections[Doctrine_Core::getTable($model)->getConnection()->getName()][] = $model;
+            $connections[Doctrine_Core::getTable($model)->getConnection()->getName()][] = $model;
         }
 
         foreach ($connections as $connection => $models) {
-            $conn = Doctrine_Manager::getInstance()->getConnection($connection);
-            $conn->beginTransaction();
-
-            $models = array_reverse($conn->unitOfWork->buildFlushTree($models));
+            $models = Doctrine_Manager::getInstance()->getConnection($connection)->unitOfWork->buildFlushTree($models);
+            $models = array_reverse($models);
             foreach ($models as $model) {
                 Doctrine_Core::getTable($model)->createQuery()->delete()->execute();
             }
-
-            $conn->commit();
         }
     }
 }

@@ -42,21 +42,22 @@ class Doctrine_Hook_Integer extends Doctrine_Hook_Parser_Complex
      * @param string $alias     component alias
      * @param string $field     the field name
      * @param mixed $value      the value of the field
-     * @return void
+     * @return string
      */
     public function parseSingle($alias, $field, $value)
     {
         $e = explode(' ', $value);
+        $a = array();
 
         foreach ($e as $v) {
-             $v = trim($v);
+            $v = trim($v);
 
-             $e2   = explode('-', $v);
+            $e2 = explode('-', $v);
 
-            $name = $alias. '.' . $field;
+            $name = $alias . '.' . $field;
 
-             if (count($e2) == 1) {
-                 // one '-' found
+            if (count($e2) == 1) {
+                // one '-' found
 
                 $a[] = $name . ' = ?';
 
@@ -68,7 +69,6 @@ class Doctrine_Hook_Integer extends Doctrine_Hook_Parser_Complex
 
                 $this->params += array($e2[0], $e2[1]);
             }
-
         }
         return implode(' OR ', $a);
     }

@@ -38,7 +38,7 @@ class Doctrine_Transaction_Pgsql extends Doctrine_Transaction
      * creates a new savepoint
      *
      * @param string $savepoint     name of a savepoint to set
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function createSavePoint($savepoint)
     {
@@ -52,7 +52,7 @@ class Doctrine_Transaction_Pgsql extends Doctrine_Transaction
      * releases given savepoint
      *
      * @param string $savepoint     name of a savepoint to release
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function releaseSavePoint($savepoint)
     {
@@ -66,7 +66,7 @@ class Doctrine_Transaction_Pgsql extends Doctrine_Transaction
      * releases given savepoint
      *
      * @param string $savepoint     name of a savepoint to rollback to
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     protected function rollbackSavePoint($savepoint)
     {
@@ -78,14 +78,14 @@ class Doctrine_Transaction_Pgsql extends Doctrine_Transaction
     /**
      * Set the transacton isolation level.
      *
-     * @param   string  standard isolation level
+     * @param   string  $isolation standard isolation level
      *                  READ UNCOMMITTED (allows dirty reads)
      *                  READ COMMITTED (prevents dirty reads)
      *                  REPEATABLE READ (prevents nonrepeatable reads)
      *                  SERIALIZABLE (prevents phantom reads)
      * @throws PDOException                         if something fails at the PDO level
      * @throws Doctrine_Transaction_Exception       if using unknown isolation level or unknown wait option
-     * @return void
+     * @return PDOStatement|Doctrine_Adapter_Statement_Interface
      */
     public function setIsolation($isolation)
     {
@@ -96,7 +96,7 @@ class Doctrine_Transaction_Pgsql extends Doctrine_Transaction
             case 'SERIALIZABLE':
                 break;
             default:
-                throw new Doctrine_Transaction_Exception('Isolation level '.$isolation.' is not supported.');
+                throw new Doctrine_Transaction_Exception('Isolation level ' . $isolation . ' is not supported.');
         }
 
         $query = 'SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ' . $isolation;

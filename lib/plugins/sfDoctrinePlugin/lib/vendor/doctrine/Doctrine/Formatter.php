@@ -40,22 +40,25 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      * WARNING: this function is experimental and may change signature at
      * any time until labelled as non-experimental
      *
-     * @param   string  the input string to quote
+     * @param   string  $text the input string to quote
      *
      * @return  string  quoted string
      */
     public function escapePattern($text)
     {
-        if ( ! $this->string_quoting['escape_pattern']) {
+        if (! $this->conn->string_quoting['escape_pattern']) {
             return $text;
         }
         $tmp = $this->conn->string_quoting;
 
-        $text = str_replace($tmp['escape_pattern'], 
+        $text = str_replace(
+            $tmp['escape_pattern'],
             $tmp['escape_pattern'] .
-            $tmp['escape_pattern'], $text);
+            $tmp['escape_pattern'],
+            $text
+        );
 
-        foreach ($this->wildcards as $wildcard) {
+        foreach ($this->conn->wildcards as $wildcard) {
             $text = str_replace($wildcard, $tmp['escape_pattern'] . $wildcard, $text);
         }
         return $text;
@@ -68,8 +71,8 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      *
      * This method takes care of that conversion
      *
-     * @param array $item
-     * @return void
+     * @param array|bool $item
+     * @return array|int
      */
     public function convertBooleans($item)
     {
@@ -125,14 +128,17 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
             return $str;
         }
         $tmp = $this->conn->identifier_quoting;
-        $str = str_replace($tmp['end'],
+        $str = str_replace(
+            $tmp['end'],
             $tmp['escape'] .
-            $tmp['end'], $str);
+            $tmp['end'],
+            $str
+        );
 
         return $tmp['start'] . $str . $tmp['end'];
     }
-    
-    
+
+
     /**
      * quoteMultipleIdentifier
      * Quotes multiple identifier strings
@@ -140,7 +146,7 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      * @param array $arr           identifiers array to be quoted
      * @param bool $checkOption     check the 'quote_identifier' option
      *
-     * @return string               quoted identifier string
+     * @return array
      */
     public function quoteMultipleIdentifier($arr, $checkOption = true)
     {
@@ -148,7 +154,7 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
             $arr[$k] = $this->quoteIdentifier($v, $checkOption);
         }
 
-		return $arr;
+        return $arr;
     }
 
     /**
@@ -161,34 +167,35 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      */
     public function quote($input, $type = null)
     {
-        if ($type == null) {
+        if ($type === null) {
             $type = gettype($input);
         }
         switch ($type) {
-        case 'integer':
-        case 'double':
-        case 'float':
-        case 'bool':
-        case 'decimal':
-        case 'int':
-            return $input;
-        case 'array':
-        case 'object':
-            $input = serialize($input);
-        case 'date':
-        case 'time':
-        case 'timestamp':
-        case 'string':
-        case 'char':
-        case 'varchar':
-        case 'text':
-        case 'gzip':
-        case 'blob':
-        case 'clob':
-        case 'enum':
-        case 'set':
-        case 'boolean':
-        return "'" . str_replace("'","''",$input) . "'";
+            case 'integer':
+            case 'double':
+            case 'float':
+            case 'bool':
+            case 'decimal':
+            case 'int':
+                return $input;
+            case 'array':
+            case 'object':
+                $input = serialize($input);
+                // no break
+            case 'date':
+            case 'time':
+            case 'timestamp':
+            case 'string':
+            case 'char':
+            case 'varchar':
+            case 'text':
+            case 'gzip':
+            case 'blob':
+            case 'clob':
+            case 'enum':
+            case 'set':
+            case 'boolean':
+                return "'" . str_replace("'", "''", $input) . "'";
         }
     }
 
@@ -200,7 +207,7 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      */
     public function fixSequenceName($sqn)
     {
-        $seqPattern = '/^'.preg_replace('/%s/', '([a-z0-9_]+)',  $this->conn->getAttribute(Doctrine_Core::ATTR_SEQNAME_FORMAT)).'$/i';
+        $seqPattern = '/^' . preg_replace('/%s/', '([a-z0-9_]+)', $this->conn->getAttribute(Doctrine_Core::ATTR_SEQNAME_FORMAT)) . '$/i';
         $seqName    = preg_replace($seqPattern, '\\1', $sqn);
 
         if ($seqName && ! strcasecmp($sqn, $this->getSequenceName($seqName))) {
@@ -217,8 +224,8 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
      */
     public function fixIndexName($idx)
     {
-        $indexPattern   = '/^'.preg_replace('/%s/', '([a-z0-9_]+)', $this->conn->getAttribute(Doctrine_Core::ATTR_IDXNAME_FORMAT)).'$/i';
-        $indexName      = preg_replace($indexPattern, '\\1', $idx);
+        $indexPattern = '/^' . preg_replace('/%s/', '([a-z0-9_]+)', $this->conn->getAttribute(Doctrine_Core::ATTR_IDXNAME_FORMAT)) . '$/i';
+        $indexName    = preg_replace($indexPattern, '\\1', $idx);
         if ($indexName && ! strcasecmp($idx, $this->getIndexName($indexName))) {
             return $indexName;
         }
@@ -228,48 +235,54 @@ class Doctrine_Formatter extends Doctrine_Connection_Module
     /**
      * adds sequence name formatting to a sequence name
      *
-     * @param string    name of the sequence
+     * @param string $sqn   name of the sequence
      * @return string   formatted sequence name
      */
     public function getSequenceName($sqn)
     {
-        return sprintf($this->conn->getAttribute(Doctrine_Core::ATTR_SEQNAME_FORMAT),
-            preg_replace('/[^a-z0-9_\$.]/i', '_', $sqn));
+        return sprintf(
+            $this->conn->getAttribute(Doctrine_Core::ATTR_SEQNAME_FORMAT),
+            preg_replace('/[^a-z0-9_\$.]/i', '_', $sqn)
+        );
     }
 
     /**
      * adds index name formatting to a index name
      *
-     * @param string    name of the index
+     * @param string $idx   name of the index
      * @return string   formatted index name
      */
     public function getIndexName($idx)
     {
-        return sprintf($this->conn->getAttribute(Doctrine_Core::ATTR_IDXNAME_FORMAT),
-            preg_replace('/[^a-z0-9_\$]/i', '_', $idx));
+        return sprintf(
+            $this->conn->getAttribute(Doctrine_Core::ATTR_IDXNAME_FORMAT),
+            preg_replace('/[^a-z0-9_\$]/i', '_', $idx)
+        );
     }
-    
+
     /**
      * Formatting a foreign Key name
      *
-     * @param string    name of the foreign key
+     * @param string $fkey   name of the foreign key
      * @return string   formatted foreign key name
      */
     public function getForeignKeyName($fkey)
     {
-        return sprintf($this->conn->getAttribute(Doctrine_Core::ATTR_FKNAME_FORMAT),
-            preg_replace('/[^a-z0-9_\$]/i', '_', $fkey));
+        return sprintf(
+            $this->conn->getAttribute(Doctrine_Core::ATTR_FKNAME_FORMAT),
+            preg_replace('/[^a-z0-9_\$]/i', '_', $fkey)
+        );
     }
 
     /**
      * adds table name formatting to a table name
      *
-     * @param string    name of the table
+     * @param string  $table  name of the table
      * @return string   formatted table name
      */
     public function getTableName($table)
     {
         $format = $this->conn->getAttribute(Doctrine_Core::ATTR_TBLNAME_FORMAT);
-        return sprintf($format, str_replace(sprintf($format, null), null, $table));
+        return sprintf($format, str_replace(sprintf($format, null), '', $table));
     }
 }
