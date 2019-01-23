@@ -16,6 +16,7 @@ class ProjectConfiguration extends sfProjectConfiguration
           'csDoctrineActAsSortablePlugin',
           'sfImageTransformPlugin',
           'sfFormExtraPlugin',
+          'sfPhpExcelPlugin',
           'sfMPDFPlugin',
           'gwUserMenuPlugin',
           'sfDependentSelectPlugin',
