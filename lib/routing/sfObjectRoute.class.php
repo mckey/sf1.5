@@ -122,11 +122,13 @@ class sfObjectRoute extends sfRequestRoute
    *
    * This method is only accessible if the route is bound and of type "list".
    *
+   * @param array $filters Query filters array
+   *
    * @return array And array of related objects
    *
    * @throws sfError404Exception
    */
-  public function getObjects()
+  public function getObjects($filters = [])
   {
     if (!$this->isBound())
     {
@@ -143,7 +145,7 @@ class sfObjectRoute extends sfRequestRoute
       return $this->objects;
     }
 
-    $this->objects = $this->getObjectsForParameters($this->parameters);
+    $this->objects = $this->getObjectsForParameters($this->parameters, $filters);
 
     if (!count($this->objects) && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
     {
@@ -162,10 +164,10 @@ class sfObjectRoute extends sfRequestRoute
       throw new InvalidArgumentException(sprintf('You must pass a "method" option for a %s object.', get_class($this)));
     }
 
-    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters));
+    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters), $filters);
   }
 
-  protected function getObjectsForParameters($parameters)
+  protected function getObjectsForParameters($parameters, $filters = [])
   {
     $className = $this->options['model'];
 
@@ -174,7 +176,7 @@ class sfObjectRoute extends sfRequestRoute
       throw new InvalidArgumentException(sprintf('You must pass a "method" option for a %s object.', get_class($this)));
     }
 
-    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters));
+    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters), $filters);
   }
 
   protected function filterParameters($parameters)
