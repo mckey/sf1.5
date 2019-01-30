@@ -59,7 +59,7 @@ class sfDoctrineRoute extends sfObjectRoute
     return $results;
   }
 
-  protected function getObjectsForParameters($parameters)
+  protected function getObjectsForParameters($parameters, $filters = [])
   {
     $tableModel = Doctrine_Core::getTable($this->options['model']);
 
@@ -102,7 +102,7 @@ class sfDoctrineRoute extends sfObjectRoute
     else
     {
       $method = $this->options['method'];
-      $results = $tableModel->$method($this->filterParameters($parameters));
+      $results = $tableModel->$method($this->filterParameters($parameters), $filters);
     }
 
     // If query returned a Doctrine_Record instance instead of a 
