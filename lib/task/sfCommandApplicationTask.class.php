@@ -136,7 +136,7 @@ abstract class sfCommandApplicationTask extends sfTask
   {
     if (!class_exists('Swift'))
     {
-      $swift_dir = sfConfig::get('sf_symfony_lib_dir').'/vendor/swiftmailer/lib';
+      $swift_dir = sfConfig::get('sf_symfony_lib_dir').'/vendor/swiftmailer';
       require_once $swift_dir.'/swift_required.php';
     }
 
