@@ -164,7 +164,7 @@ class sfObjectRoute extends sfRequestRoute
       throw new InvalidArgumentException(sprintf('You must pass a "method" option for a %s object.', get_class($this)));
     }
 
-    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters), $filters);
+    return call_user_func(array($className, $this->options['method']), $this->filterParameters($parameters));
   }
 
   protected function getObjectsForParameters($parameters, $filters = [])
