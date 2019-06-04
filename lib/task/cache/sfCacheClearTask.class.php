@@ -15,7 +15,6 @@
  * @subpackage task
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
  */
-
 class sfCacheClearTask extends sfBaseTask
 {
     protected
@@ -30,7 +29,7 @@ class sfCacheClearTask extends sfBaseTask
           new sfCommandOption('app', null, sfCommandOption::PARAMETER_OPTIONAL, 'The application name', null),
           new sfCommandOption('env', null, sfCommandOption::PARAMETER_OPTIONAL, 'The environment', null),
           new sfCommandOption('type', null, sfCommandOption::PARAMETER_OPTIONAL, 'The type', 'all'),
-          new sfCommandOption('silent', null, sfCommandOption::PARAMETER_OPTIONAL, 'Do not log', 0),
+          new sfCommandOption('silent', null, sfCommandOption::PARAMETER_OPTIONAL, 'Do not log', null),
         ]);
 
         $this->aliases = ['cc'];
@@ -96,34 +95,51 @@ EOF;
                     continue;
                 }
 
-                if (!$options['silent']) {
+                if (is_null($options['silent'])) {
                     $this->logSection('cache', sprintf('Clearing cache type "%s" for "%s" app and "%s" env', $options['type'], $app, $env));
                 }
 
                 $appConfiguration = ProjectConfiguration::getApplicationConfiguration($app, $env, true);
 
-                $this->lock($app, $env);
+                $this->lock($app, $env, !is_null($options['silent']));
 
-                if (!$options['silent']) {
-                    $event = $appConfiguration->getEventDispatcher()->notifyUntil(new sfEvent($this, 'task.cache.clear', ['app' => $appConfiguration, 'env' => $env, 'type' => $options['type']]));
-                    if (!$event->isProcessed()) {
-                        // default cleaning process
-                        $method = $this->getClearCacheMethod($options['type']);
-                        if (!method_exists($this, $method)) {
-                            throw new InvalidArgumentException(sprintf('Do not know how to remove cache for type "%s".', $options['type']));
-                        }
-                        $this->$method($appConfiguration);
+
+                $event = $appConfiguration->getEventDispatcher()->notifyUntil(new sfEvent($this, 'task.cache.clear', ['app' => $appConfiguration, 'env' => $env, 'type' => $options['type']]));
+                if (!$event->isProcessed()) {
+                    // default cleaning process
+                    $method = $this->getClearCacheMethod($options['type']);
+                    if (!method_exists($this, $method)) {
+                        throw new InvalidArgumentException(sprintf('Do not know how to remove cache for type "%s".', $options['type']));
                     }
+                    $this->$method($appConfiguration, !is_null($options['silent']));
                 }
 
-                $this->unlock($app, $env);
+                $this->unlock($app, $env, !is_null($options['silent']));
             }
         }
 
         // clear global cache
         if (null === $options['app'] && 'all' == $options['type']) {
-            $this->getFilesystem()->remove(sfFinder::type('file')->discard('.*')->in(sfConfig::get('sf_cache_dir')));
+            $this->getFilesystem()
+              ->remove(
+                sfFinder::type('file')->discard('.*')->in(sfConfig::get('sf_cache_dir')),
+                !is_null($options['silent'])
+              );
         }
+    }
+
+    protected function lock($app, $env, $silent = false)
+    {
+        // create a lock file
+        $this->getFilesystem()->touch($this->getLockFile($app, $env), $silent);
+
+        // change mode so the web user can remove it if we die
+        $this->getFilesystem()->chmod($this->getLockFile($app, $env), 0777, 0000, $silent);
+    }
+
+    protected function getLockFile($app, $env)
+    {
+        return sfConfig::get('sf_data_dir') . '/' . $app . '_' . $env . '-cli.lck';
     }
 
     protected function getClearCacheMethod($type)
@@ -131,23 +147,19 @@ EOF;
         return sprintf('clear%sCache', ucfirst($type));
     }
 
-    protected function clearAllCache(sfApplicationConfiguration $appConfiguration)
+    protected function unlock($app, $env, $silent = false)
+    {
+        // release lock
+        $this->getFilesystem()->remove($this->getLockFile($app, $env), $silent);
+    }
+
+    protected function clearAllCache(sfApplicationConfiguration $appConfiguration, $silent = false)
     {
         $this->clearI18NCache($appConfiguration);
         $this->clearRoutingCache($appConfiguration);
-        $this->clearTemplateCache($appConfiguration);
-        $this->clearModuleCache($appConfiguration);
-        $this->clearConfigCache($appConfiguration);
-    }
-
-    protected function clearConfigCache(sfApplicationConfiguration $appConfiguration)
-    {
-        $subDir = sfConfig::get('sf_cache_dir') . '/' . $appConfiguration->getApplication() . '/' . $appConfiguration->getEnvironment() . '/config';
-
-        if (is_dir($subDir)) {
-            // remove cache files
-            $this->getFilesystem()->remove(sfFinder::type('file')->discard('.*')->in($subDir));
-        }
+        $this->clearTemplateCache($appConfiguration, $silent);
+        $this->clearModuleCache($appConfiguration, $silent);
+        $this->clearConfigCache($appConfiguration, $silent);
     }
 
     protected function clearI18NCache(sfApplicationConfiguration $appConfiguration)
@@ -156,34 +168,6 @@ EOF;
 
         if (isset($config['i18n']['param']['cache'])) {
             $this->cleanCacheFromFactoryConfig($config['i18n']['param']['cache']);
-        }
-    }
-
-    protected function clearRoutingCache(sfApplicationConfiguration $appConfiguration)
-    {
-        $config = $this->getFactoriesConfiguration($appConfiguration);
-
-        if (isset($config['routing']['param']['cache'])) {
-            $this->cleanCacheFromFactoryConfig($config['routing']['param']['cache']);
-        }
-    }
-
-    protected function clearTemplateCache(sfApplicationConfiguration $appConfiguration)
-    {
-        $config = $this->getFactoriesConfiguration($appConfiguration);
-
-        if (isset($config['view_cache'])) {
-            $this->cleanCacheFromFactoryConfig($config['view_cache']);
-        }
-    }
-
-    protected function clearModuleCache(sfApplicationConfiguration $appConfiguration)
-    {
-        $subDir = sfConfig::get('sf_cache_dir') . '/' . $appConfiguration->getApplication() . '/' . $appConfiguration->getEnvironment() . '/modules';
-
-        if (is_dir($subDir)) {
-            // remove cache files
-            $this->getFilesystem()->remove(sfFinder::type('file')->discard('.*')->in($subDir));
         }
     }
 
@@ -225,23 +209,41 @@ EOF;
         }
     }
 
-    protected function lock($app, $env)
+    protected function clearRoutingCache(sfApplicationConfiguration $appConfiguration)
     {
-        // create a lock file
-        $this->getFilesystem()->touch($this->getLockFile($app, $env));
+        $config = $this->getFactoriesConfiguration($appConfiguration);
 
-        // change mode so the web user can remove it if we die
-        $this->getFilesystem()->chmod($this->getLockFile($app, $env), 0777);
+        if (isset($config['routing']['param']['cache'])) {
+            $this->cleanCacheFromFactoryConfig($config['routing']['param']['cache']);
+        }
     }
 
-    protected function unlock($app, $env)
+    protected function clearTemplateCache(sfApplicationConfiguration $appConfiguration)
     {
-        // release lock
-        $this->getFilesystem()->remove($this->getLockFile($app, $env));
+        $config = $this->getFactoriesConfiguration($appConfiguration);
+
+        if (isset($config['view_cache'])) {
+            $this->cleanCacheFromFactoryConfig($config['view_cache']);
+        }
     }
 
-    protected function getLockFile($app, $env)
+    protected function clearModuleCache(sfApplicationConfiguration $appConfiguration, $silent = false)
     {
-        return sfConfig::get('sf_data_dir') . '/' . $app . '_' . $env . '-cli.lck';
+        $subDir = sfConfig::get('sf_cache_dir') . '/' . $appConfiguration->getApplication() . '/' . $appConfiguration->getEnvironment() . '/modules';
+
+        if (is_dir($subDir)) {
+            // remove cache files
+            $this->getFilesystem()->remove(sfFinder::type('file')->discard('.*')->in($subDir), $silent);
+        }
+    }
+
+    protected function clearConfigCache(sfApplicationConfiguration $appConfiguration, $silent = false)
+    {
+        $subDir = sfConfig::get('sf_cache_dir') . '/' . $appConfiguration->getApplication() . '/' . $appConfiguration->getEnvironment() . '/config';
+
+        if (is_dir($subDir)) {
+            // remove cache files
+            $this->getFilesystem()->remove(sfFinder::type('file')->discard('.*')->in($subDir), $silent);
+        }
     }
 }
