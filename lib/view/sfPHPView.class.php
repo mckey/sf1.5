@@ -113,7 +113,7 @@ class sfPHPView extends sfView
      */
     protected function renderFile($_sfFile)
     {
-        if (empty($_sfFile)) {
+        if (empty($_sfFile) || $_sfFile == '/') {
             return "";
         }
 
