@@ -518,7 +518,6 @@ abstract class Doctrine_Connection extends Doctrine_Configurable implements Coun
                     );
 
                     $this->dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                    $this->dbh->setAttribute(PDO::ATTR_AUTOCOMMIT, false);
                 } catch (PDOException $e) {
                     throw new Doctrine_Connection_Exception('PDO Connection Error: ' . $e->getMessage());
                 }
