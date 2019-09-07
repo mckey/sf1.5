@@ -46,7 +46,15 @@ class Doctrine_Cache_Memcached extends Doctrine_Cache_Driver
             if (!array_key_exists('port', $server)) {
                 $server['port'] = 11211;
             }
-            $this->_memcached->addServer($server['host'], $server['port']);
+
+            $active_servers = $this->_memcached->getServerList();
+            if (is_array($active_servers)) {
+                foreach ($active_servers as $active_server) {
+                    if ($active_server['host'] != $server['host'] || $active_server['port'] != $server['port']) {
+                        $this->_memcached->addServer($server['host'], $server['port']);
+                    }
+                }
+            }
         }
     }
 
