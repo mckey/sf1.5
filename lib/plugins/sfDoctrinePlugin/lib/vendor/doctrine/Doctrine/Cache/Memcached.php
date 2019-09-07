@@ -40,7 +40,7 @@ class Doctrine_Cache_Memcached extends Doctrine_Cache_Driver
             $this->setOption('servers', $value);
         }
 
-        $this->_memcached = new Memcached();
+        $this->_memcached = new Memcached($options['persistent_id']);
 
         foreach ($this->_options['servers'] as $server) {
             if (!array_key_exists('port', $server)) {
