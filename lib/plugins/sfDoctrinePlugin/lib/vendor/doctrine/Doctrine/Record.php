@@ -1819,14 +1819,14 @@ abstract class Doctrine_Record extends Doctrine_Record_Abstract implements Count
      * success or FALSE on failure.
      *
      * @param Doctrine_Connection $conn                 optional connection parameter
-     * @return bool TRUE if the record was saved sucessfully without errors, FALSE otherwise.
+     * @return bool TRUE if the record was saved successfully without errors, FALSE otherwise.
      */
     public function trySave(Doctrine_Connection $conn = null)
     {
         try {
             $this->save($conn);
             return true;
-        } catch (Doctrine_Validator_Exception $ignored) {
+        } catch (Exception $ignored) {
             return false;
         }
     }
