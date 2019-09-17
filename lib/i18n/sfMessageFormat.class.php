@@ -164,7 +164,7 @@ class sfMessageFormat
             $catalogue = empty($this->catalogue) ? 'messages' : $this->catalogue;
         }
 
-        $prefix = sprintf($this->script[0], $string);
+        $prefix = !empty($this->script[0]) ? sprintf($this->script[0], $string) : $this->script[0];
         $suffix = $this->script[1];
 
         $this->loadCatalogue($catalogue);
