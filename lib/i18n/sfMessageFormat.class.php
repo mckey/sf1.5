@@ -76,11 +76,6 @@ class sfMessageFormat
      */
     protected $postscript = ['', ''];
     /**
-     * The prefix and suffix to append to all messages.
-     * @var array
-     */
-    protected $script = ['', ''];
-    /**
      * Output encoding charset
      * @var string
      */
@@ -164,9 +159,6 @@ class sfMessageFormat
             $catalogue = empty($this->catalogue) ? 'messages' : $this->catalogue;
         }
 
-        $prefix = !empty($this->script[0]) ? sprintf($this->script[0], $string) : $this->script[0];
-        $suffix = $this->script[1];
-
         $this->loadCatalogue($catalogue);
 
         foreach ($this->messages[$catalogue] as $variant) {
@@ -181,24 +173,16 @@ class sfMessageFormat
 
                 // found, but untranslated
                 if (empty($target)) {
-                    return $prefix .
-                           $this->postscript[0] .
-                           $this->replaceArgs($string, $args) .
-                           $this->postscript[1].
-                           $suffix;
+                    return $this->postscript[0] . $this->replaceArgs($string, $args) . $this->postscript[1];
                 }
-                return $prefix . $this->replaceArgs($target, $args) . $suffix;
+                return $this->replaceArgs($target, $args);
             }
         }
 
         // well we did not find the translation string.
         $this->source->append($string);
 
-        return $prefix .
-               $this->postscript[0] .
-               $this->replaceArgs($string, $args) .
-               $this->postscript[1].
-               $suffix;
+        return $this->postscript[0] . $this->replaceArgs($string, $args) . $this->postscript[1];
     }
 
     /**
@@ -255,21 +239,6 @@ class sfMessageFormat
         if (is_array($postscript) && count($postscript) >= 2) {
             $this->postscript[0] = $postscript[0];
             $this->postscript[1] = $postscript[1];
-        }
-    }
-
-    /**
-     * Sets the prefix and suffix to append to all messages.
-     * e.g. $postscript=array('[T]','[/T]'); will output
-     * "[T]Hello[/T]" if the translation for "Hello" can not be determined.
-     *
-     * @param array $postscript first element is the prefix, second element the suffix.
-     */
-    function setPS($script)
-    {
-        if (is_array($script) && count($script) >= 2) {
-            $this->script[0] = $script[0];
-            $this->script[1] = $script[1];
         }
     }
 }

@@ -179,6 +179,15 @@ class sfI18N
      */
     public function __($string, $args = [], $catalogue = 'messages')
     {
+        if ($this->options['translator_mode']) {
+            $prefix = !empty($this->options['prefix']) ?
+              sprintf($this->options['prefix'], $string) :
+              $this->options['prefix'];
+            $suffix = $this->options['suffix'];
+
+            return $prefix. $this->getMessageFormat()->format($string, $args, $catalogue). $suffix;
+        }
+
         return $this->getMessageFormat()->format($string, $args, $catalogue);
     }
 
@@ -194,10 +203,6 @@ class sfI18N
 
             if ($this->options['debug']) {
                 $this->messageFormat->setUntranslatedPS([$this->options['untranslated_prefix'], $this->options['untranslated_suffix']]);
-            }
-
-            if ($this->options['translator_mode']) {
-                $this->messageFormat->setPS([$this->options['prefix'], $this->options['suffix']]);
             }
         }
 
