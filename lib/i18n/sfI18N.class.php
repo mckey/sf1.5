@@ -253,6 +253,22 @@ class sfI18N
     }
 
     /**
+     * Setting source option on fly
+     *
+     * @param string $source New source
+     * @return null
+     * @throws null
+     */
+    public function setSourceOption($source = null)
+    {
+        if (null !== $source) {
+            $this->options['source'] = $source;
+        }
+
+        $this->messageSource = null;
+    }
+
+    /**
      * Returns a new message source.
      *
      * @param mixed $dir An array of i18n directories to create a XLIFF or gettext message source, null otherwise
