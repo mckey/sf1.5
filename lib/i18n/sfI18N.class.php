@@ -14,7 +14,6 @@
  * @package    symfony
  * @subpackage i18n
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
- * @version    SVN: $Id$
  */
 class sfI18N
 {
@@ -83,26 +82,6 @@ class sfI18N
     }
 
     /**
-     * Sets Translator mode
-     *
-     * @param boolean $translator_mode
-     * @param string $prefix
-     * @param string $suffix
-     */
-    public function setTranslatorMode($translator_mode = false, $prefix = '', $suffix = '')
-    {
-        $this->options['translator_mode'] = $translator_mode;
-
-        if(!empty($prefix)) {
-            $this->options['prefix'] = $prefix;
-        }
-
-        if(!empty($suffix)) {
-            $this->options['suffix'] = $suffix;
-        }
-    }
-
-    /**
      * Sets the current culture for i18n format objects.
      *
      * @param string $culture The culture
@@ -136,6 +115,26 @@ class sfI18N
         $class = 'sfMessageSource_' . $source;
 
         return class_exists($class) && is_subclass_of($class, 'sfMessageSource_File');
+    }
+
+    /**
+     * Sets Translator mode
+     *
+     * @param boolean $translator_mode
+     * @param string $prefix
+     * @param string $suffix
+     */
+    public function setTranslatorMode($translator_mode = false, $prefix = '', $suffix = '')
+    {
+        $this->options['translator_mode'] = $translator_mode;
+
+        if (!empty($prefix)) {
+            $this->options['prefix'] = $prefix;
+        }
+
+        if (!empty($suffix)) {
+            $this->options['suffix'] = $suffix;
+        }
     }
 
     /**
@@ -185,7 +184,7 @@ class sfI18N
               $this->options['prefix'];
             $suffix = $this->options['suffix'];
 
-            return $prefix. $this->getMessageFormat()->format($string, $args, $catalogue). $suffix;
+            return $prefix . $this->getMessageFormat()->format($string, $args, $catalogue) . $suffix;
         }
 
         return $this->getMessageFormat()->format($string, $args, $catalogue);
@@ -253,22 +252,6 @@ class sfI18N
     }
 
     /**
-     * Setting source option on fly
-     *
-     * @param string $source New source
-     * @return null
-     * @throws null
-     */
-    public function setSourceOption($source = null)
-    {
-        if (null !== $source) {
-            $this->options['source'] = $source;
-        }
-
-        $this->messageSource = null;
-    }
-
-    /**
      * Returns a new message source.
      *
      * @param mixed $dir An array of i18n directories to create a XLIFF or gettext message source, null otherwise
@@ -283,6 +266,22 @@ class sfI18N
             $this->options['database'] = $database_manager->getDatabase($databases[0]);
         }
         return sfMessageSource::factory($this->options['source'], self::isMessageSourceFileBased($this->options['source']) ? $dir : $this->options['database']);
+    }
+
+    /**
+     * Setting source option on fly
+     *
+     * @param string $source New source
+     * @return null
+     * @throws null
+     */
+    public function setSourceOption($source = null)
+    {
+        if (null !== $source) {
+            $this->options['source'] = $source;
+        }
+
+        $this->messageSource = null;
     }
 
     /**
