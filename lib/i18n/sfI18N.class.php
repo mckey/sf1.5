@@ -178,13 +178,17 @@ class sfI18N
      */
     public function __($string, $args = [], $catalogue = 'messages')
     {
-        if ($this->options['translator_mode']) {
+        if ($this->options['translator_mode'] && !isset($args['skip_tm'])) {
             $prefix = !empty($this->options['prefix']) ?
               sprintf($this->options['prefix'], $string) :
               $this->options['prefix'];
             $suffix = $this->options['suffix'];
 
             return $prefix . $this->getMessageFormat()->format($string, $args, $catalogue) . $suffix;
+        }
+
+        if(isset($args['skip_tm'])) {
+            unset($args['skip_tm']);
         }
 
         return $this->getMessageFormat()->format($string, $args, $catalogue);

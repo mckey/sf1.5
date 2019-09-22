@@ -85,10 +85,10 @@ abstract class sfWidgetFormSchemaFormatter
 
     if (self::$translationCallable instanceof sfCallable)
     {
-      return self::$translationCallable->call($subject, $parameters, $catalogue);
+      return self::$translationCallable->call($subject, $parameters + ['skip_tm' => true], $catalogue);
     }
 
-    return call_user_func(self::$translationCallable, $subject, $parameters, $catalogue);
+    return call_user_func(self::$translationCallable, $subject, $parameters + ['skip_tm' => true], $catalogue);
   }
 
   /**
