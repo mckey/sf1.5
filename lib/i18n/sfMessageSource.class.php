@@ -113,10 +113,11 @@ abstract class sfMessageSource implements sfIMessageSource
    * @param string $type      the message source type.
    * @param string $source    the location of the resource.
    * @param string $filename  the filename of the custom message source.
+   * @param string $catalog   message source catalog name.
    * @return sfMessageSource a new message source of the specified type.
    * @throws sfException
    */
-  static function factory($type, $source = '.', $filename = '')
+  static function factory($type, $source = '.', $filename = '', $catalog = 'messages')
   {
     if ($filename)
     {
@@ -139,7 +140,7 @@ abstract class sfMessageSource implements sfIMessageSource
       throw new sfException(sprintf('Unable to find type "%s".', $type));
     }
 
-    return new $class($source);
+    return new $class($source, $catalog);
   }
 
   /**
