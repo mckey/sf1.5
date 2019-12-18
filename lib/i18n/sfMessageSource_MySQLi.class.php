@@ -81,9 +81,9 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
   /**
    * Constructor.
-   * Creates a new message source using MySQL.
+   * Creates a new message source using MySQLi.
    *
-   * @param mixed $source MySQL datasource, in PEAR's DB DSN format.
+   * @param mixed $source MySQL data source, in PEAR's DB DSN format.
    * @param string $catalog catalog name.
    * @throws null
    * @see MessageSource::factory();
@@ -301,25 +301,70 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     if ($cat_id <= 0) {
       return false;
     }
-    $inserted = 0;
 
+    $inserted = 0;
+    $formatter = new Doctrine_Formatter();
     $time = date('Y-m-d h:i:s');
 
     foreach ($messages as $message) {
       $count++;
       $inserted++;
-      $formatter = new Doctrine_Formatter();
       $message = $formatter->quote($message, 'string');
       $statement = "INSERT INTO trans_unit
         (catalogue_id,msg,source,created_at,created_by) VALUES
-        ({$cat_id}, {$count}, {$message},'{$time}', 1)";
+        ({$cat_id}, {$count}, '{$message}','{$time}', 1)";
       $this->db->execute($statement);
     }
+
     if ($inserted > 0) {
       $this->updateCatalogueTime($cat_id, $variant);
     }
 
     return $inserted > 0;
+  }
+
+  /**
+   * Adds the translation.
+   *
+   * @param string $source the source string.
+   * @param string $target the new translation string.
+   * @param string $comments
+   * @param string $catalogue the catalogue of the translation.
+   * @param int $user_id
+   * @return boolean true if translation was added, false otherwise.
+   */
+  function add($source, $target, $comments = '', $catalogue = 'messages', $user_id = 1)
+  {
+    $details = $this->getCatalogueDetails($catalogue);
+
+    if (count($details) == 3) {
+      [$cat_id, $variant, $count] = $details;
+    } else {
+      return false;
+    }
+
+    if ($cat_id <= 0) {
+      return false;
+    }
+
+    $time = date('Y-m-d h:i:s');
+
+    $count++;
+
+    $formatter = new Doctrine_Formatter();
+    $source = $formatter->quote($source, 'string');
+    $target = $formatter->quote($target, 'string');
+    $comments = $formatter->quote($comments, 'string');
+    $statement = "INSERT INTO trans_unit
+        (catalogue_id,msg,source,target,comments,created_at,created_by) VALUES
+        ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id})";
+    $result = $this->db->execute($statement);
+
+    if(!empty($result)) {
+      $this->updateCatalogueTime($cat_id, $variant);
+    }
+
+    return !empty($result);
   }
 
   /**
@@ -381,6 +426,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $updated = false;
 
     $rs = $this->db->execute($statement);
+
     if ($rs->rowCount() == 1) {
       $updated = $this->updateCatalogueTime($cat_id, $variant);
     }

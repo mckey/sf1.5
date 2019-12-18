@@ -132,7 +132,7 @@ class sfValidatorFile extends sfValidatorBase
           $max = min($max, $this->getOption('max_size'));
         }
         throw new sfValidatorError($this, 'max_size', array(
-          'max_size' => round($max / 1024, 0), 
+          'max_size' => round($max / 1024, 0),
           'size' => (int) $value['size']
         ));
       case UPLOAD_ERR_FORM_SIZE:
@@ -154,7 +154,7 @@ class sfValidatorFile extends sfValidatorBase
     if ($this->hasOption('max_size') && $this->getOption('max_size') < (int) $value['size'])
     {
       throw new sfValidatorError($this, 'max_size', array(
-        'max_size' => round($this->getOption('max_size') / 1024, 0), 
+        'max_size' => round($this->getOption('max_size') / 1024, 0),
         'size' => (int) $value['size']
       ));
     }
@@ -262,8 +262,9 @@ class sfValidatorFile extends sfValidatorBase
   protected function guessFromFileBinary($file)
   {
     ob_start();
-    //need to use --mime instead of -i. see #6641
-    passthru(sprintf('file -b --mime %s 2>/dev/null', escapeshellarg($file)), $return);
+    $cmd = 'file -b --mime -- %s 2>/dev/null';
+    $file = (0 === strpos($file, '-') ? './' : '').$file;
+    passthru(sprintf($cmd, escapeshellarg($file)), $return);
     if ($return > 0)
     {
       ob_end_clean();

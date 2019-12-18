@@ -27,7 +27,7 @@ class sfSessionStorage extends sfStorage
 {
   static protected
     $sessionIdRegenerated = false,
-    $sessionStarted       = false;
+    $sessionStarted = false;
 
   /**
    * Available options:
@@ -45,15 +45,15 @@ class sfSessionStorage extends sfStorage
    *
    * @param array $options An associative array of options
    *
+   * @return void
    * @see sfStorage
    *
-   * @return void
    */
   public function initialize($options = null)
   {
     $cookieDefaults = session_get_cookie_params();
 
-    $options = array_merge(array(
+    $options = array_merge([
       'session_name'            => 'symfony',
       'session_id'              => null,
       'auto_start'              => true,
@@ -62,40 +62,50 @@ class sfSessionStorage extends sfStorage
       'session_cookie_domain'   => $cookieDefaults['domain'],
       'session_cookie_secure'   => $cookieDefaults['secure'],
       'session_cookie_httponly' => isset($cookieDefaults['httponly']) ? $cookieDefaults['httponly'] : false,
+      'session_cookie_samesite' => isset($cookieDefaults['samesite']) ? $cookieDefaults['samesite'] : '',
       'session_cache_limiter'   => null,
-    ), $options);
+    ], $options);
 
     // initialize parent
     parent::initialize($options);
 
-    if(!self::$sessionStarted ) {
-        // set session name
-        $sessionName = $this->options['session_name'];
+    if (!self::$sessionStarted) {
+      // set session name
+      $sessionName = $this->options['session_name'];
 
-        session_name($sessionName);
+      session_name($sessionName);
 
-        if (!(boolean) ini_get('session.use_cookies') && $sessionId = $this->options['session_id'])
-        {
-            session_id($sessionId);
-        }
+      if (!(boolean)ini_get('session.use_cookies') && $sessionId = $this->options['session_id']) {
+        session_id($sessionId);
+      }
 
-        $lifetime = $this->options['session_cookie_lifetime'];
-        $path     = $this->options['session_cookie_path'];
-        $domain   = $this->options['session_cookie_domain'];
-        $secure   = $this->options['session_cookie_secure'];
-        $httpOnly = $this->options['session_cookie_httponly'];
+      $lifetime = $this->options['session_cookie_lifetime'];
+      $path = $this->options['session_cookie_path'];
+      $domain = $this->options['session_cookie_domain'];
+      $secure = $this->options['session_cookie_secure'];
+      $httpOnly = $this->options['session_cookie_httponly'];
+      $samesite = $this->options['session_cookie_samesite'];
+      if (PHP_VERSION_ID < 70300) {
         session_set_cookie_params($lifetime, $path, $domain, $secure, $httpOnly);
+      } else {
+        session_set_cookie_params([
+          'lifetime' => $lifetime,
+          'path'     => $path,
+          'domain'   => $domain,
+          'secure'   => $secure,
+          'httponly' => $httpOnly,
+          'samesite' => $samesite,
+        ]);
+      }
 
-        if (null !== $this->options['session_cache_limiter'])
-        {
-            session_cache_limiter($this->options['session_cache_limiter']);
-        }
+      if (null !== $this->options['session_cache_limiter']) {
+        session_cache_limiter($this->options['session_cache_limiter']);
+      }
 
-        if ($this->options['auto_start'])
-        {
-            session_start();
-            self::$sessionStarted = true;
-        }
+      if ($this->options['auto_start']) {
+        session_start();
+        self::$sessionStarted = true;
+      }
     }
   }
 
@@ -104,7 +114,7 @@ class sfSessionStorage extends sfStorage
    *
    * The preferred format for a key is directory style so naming conflicts can be avoided.
    *
-   * @param  string $key  A unique key identifying your data
+   * @param string $key A unique key identifying your data
    *
    * @return mixed Data associated with the key
    */
@@ -112,8 +122,7 @@ class sfSessionStorage extends sfStorage
   {
     $retval = null;
 
-    if (isset($_SESSION[$key]))
-    {
+    if (isset($_SESSION[$key])) {
       $retval = $_SESSION[$key];
     }
 
@@ -125,7 +134,7 @@ class sfSessionStorage extends sfStorage
    *
    * The preferred format for a key is directory style so naming conflicts can be avoided.
    *
-   * @param  string $key  A unique key identifying your data
+   * @param string $key A unique key identifying your data
    *
    * @return mixed Data associated with the key
    */
@@ -133,8 +142,7 @@ class sfSessionStorage extends sfStorage
   {
     $retval = null;
 
-    if (isset($_SESSION[$key]))
-    {
+    if (isset($_SESSION[$key])) {
       $retval = $_SESSION[$key];
       unset($_SESSION[$key]);
     }
@@ -147,8 +155,8 @@ class sfSessionStorage extends sfStorage
    *
    * The preferred format for a key is directory style so naming conflicts can be avoided.
    *
-   * @param string $key   A unique key identifying your data
-   * @param mixed  $data  Data associated with your key
+   * @param string $key A unique key identifying your data
+   * @param mixed $data Data associated with your key
    *
    */
   public function write($key, $data)
@@ -159,15 +167,14 @@ class sfSessionStorage extends sfStorage
   /**
    * Regenerates id that represents this storage.
    *
-   * @param  boolean $destroy Destroy session when regenerating?
+   * @param boolean $destroy Destroy session when regenerating?
    *
    * @return bool|void
    *
    */
   public function regenerate($destroy = false)
   {
-    if (self::$sessionIdRegenerated)
-    {
+    if (self::$sessionIdRegenerated) {
       return;
     }
 

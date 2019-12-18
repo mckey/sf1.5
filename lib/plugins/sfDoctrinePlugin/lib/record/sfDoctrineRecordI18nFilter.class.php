@@ -34,6 +34,8 @@ class sfDoctrineRecordI18nFilter extends Doctrine_Record_Filter
    * @param Doctrine_Record $record
    * @param string          $name   Name of the property
    * @param string          $value  Value of the property
+   * @throws sfException
+   * @return boolean
    */
   public function filterSet(Doctrine_Record $record, $name, $value)
   {
@@ -47,11 +49,14 @@ class sfDoctrineRecordI18nFilter extends Doctrine_Record_Filter
    *
    * @param Doctrine_Record $record
    * @param string          $name   Name of the property
+   * @throws sfException
+   * @return string translation
    */
   public function filterGet(Doctrine_Record $record, $name)
   {
     $culture = sfDoctrineRecord::getDefaultCulture();
-    if ((isset($record['Translation'][$culture]) || isset($record->getTranslation()[$culture])) && '' != $record['Translation'][$culture][$name])
+    if (is_subclass_of($record['Translation'][$culture], 'Doctrine_Record') &&
+      '' != $record['Translation'][$culture][$name])
     {
       return $record['Translation'][$culture][$name];
     }
