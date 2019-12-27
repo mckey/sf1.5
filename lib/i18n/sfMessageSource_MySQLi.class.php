@@ -312,7 +312,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       $message = $formatter->quote($message, 'string');
       $statement = "INSERT INTO trans_unit
         (catalogue_id,msg,source,created_at,created_by) VALUES
-        ({$cat_id}, {$count}, '{$message}','{$time}', 1)";
+        ({$cat_id}, {$count}, {$message},'{$time}', 1)";
       $this->db->execute($statement);
     }
 
