@@ -383,7 +383,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       return false;
     }
 
-    $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND source = '{$message}'";
+    $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND BINARY source = '{$message}'";
     $deleted = false;
 
     $rs = $this->db->execute($statement);
@@ -421,7 +421,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $time = date('Y-m-d h:i:s');
 
-    $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' WHERE catalogue_id = {$cat_id} AND source = {$text}";
+    $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' ".
+      "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}";
 
     $updated = false;
 
