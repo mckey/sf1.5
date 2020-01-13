@@ -216,8 +216,18 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    */
   public function isValidSource($variant)
   {
+
+    $variant_array = explode('.', $variant);
+    $variant_culture = isset($variant_array[1]) ? $variant_array[1] : $this->culture;
+
+    if(in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
+      !in_array($variant_culture, ['ru', 'ua', 'is', 'cn']) ||
+      !in_array($this->culture, ['ru', 'ua', 'is', 'cn'])) {
+      return false;
+    }
+
     $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$variant}'");
-    if (!in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) && $rs->rowCount() == 0) {
+    if ($rs->rowCount() == 0) {
       $time = date('Y-m-d h:i:s');
       $statement = "INSERT INTO catalogue
         (name,source_lang,target_lang,created_at,created_by) VALUES
