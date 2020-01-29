@@ -5,7 +5,8 @@
   "require": {
     "swiftmailer/swiftmailer": "~5.2",
     "ext-mysqli": "*",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-pdo": "*"
   },
   "require-dev": {
     "psr/log": "*"
