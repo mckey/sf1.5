@@ -8,7 +8,8 @@
     "ext-json": "*",
     "ext-pdo": "*",
     "ext-curl": "*",
-    "ext-zlib": "*"
+    "ext-zlib": "*",
+    "ext-calendar": "*"
   },
   "require-dev": {
     "psr/log": "*"
