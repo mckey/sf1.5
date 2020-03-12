@@ -345,6 +345,10 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    */
   function add($source, $target, $comments = '', $catalogue = 'messages', $user_id = 1)
   {
+    if (empty($source)) {
+      return false;
+    }
+
     $details = $this->getCatalogueDetails($catalogue);
 
     if (count($details) == 3) {
