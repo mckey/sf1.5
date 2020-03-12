@@ -216,13 +216,12 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    */
   public function isValidSource($variant)
   {
-
     $variant_array = explode('.', $variant);
     $variant_culture = isset($variant_array[1]) ? $variant_array[1] : $this->culture;
 
-    if(in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
-      !in_array($variant_culture, ['ru', 'ua', 'is', 'cn']) ||
-      !in_array($this->culture, ['ru', 'ua', 'is', 'cn'])) {
+    if (in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
+        !in_array($variant_culture, ['ru', 'ua', 'is', 'cn']) ||
+        !in_array($this->culture, ['ru', 'ua', 'is', 'cn'])) {
       return false;
     }
 
@@ -320,10 +319,12 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       $count++;
       $inserted++;
       $message = $formatter->quote($message, 'string');
-      $statement = "INSERT INTO trans_unit
+      if (!empty($message)) {
+        $statement = "INSERT INTO trans_unit
         (catalogue_id,msg,source,created_at,created_by) VALUES
         ({$cat_id}, {$count}, {$message},'{$time}', 1)";
-      $this->db->execute($statement);
+        $this->db->execute($statement);
+      }
     }
 
     if ($inserted > 0) {
@@ -374,7 +375,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id})";
     $result = $this->db->execute($statement);
 
-    if(!empty($result)) {
+    if (!empty($result)) {
       $this->updateCatalogueTime($cat_id, $variant);
     }
 
@@ -435,8 +436,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $time = date('Y-m-d h:i:s');
 
-    $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' ".
-      "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}";
+    $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' " .
+                 "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}";
 
     $updated = false;
 
