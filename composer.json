@@ -9,7 +9,8 @@
     "ext-pdo": "*",
     "ext-curl": "*",
     "ext-zlib": "*",
-    "ext-calendar": "*"
+    "ext-calendar": "*",
+    "ext-mbstring": "*"
   },
   "require-dev": {
     "psr/log": "*"
