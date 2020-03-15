@@ -321,8 +321,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       $message = $formatter->quote($message, 'string');
       if (!empty($message)) {
         $statement = "INSERT INTO trans_unit
-        (catalogue_id,msg,source,created_at,created_by) VALUES
-        ({$cat_id}, {$count}, {$message},'{$time}', 1)";
+        (catalogue_id,msg,source,comments,created_at,created_by) VALUES
+        ({$cat_id}, {$count}, {$message},'save','{$time}', 1)";
         $this->db->execute($statement);
       }
     }
@@ -369,7 +369,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $formatter = new Doctrine_Formatter();
     $source = $formatter->quote($source, 'string');
     $target = $formatter->quote($target, 'string');
-    $comments = $formatter->quote($comments, 'string');
+    $comments = $formatter->quote($comments . ' add', 'string');
     $statement = "INSERT INTO trans_unit
         (catalogue_id,msg,source,target,comments,created_at,created_by) VALUES
         ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id})";
@@ -421,7 +421,12 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    */
   function update($text, $target, $comments = '', $catalogue = 'messages')
   {
+    if (empty($text) || empty($target)) {
+      return false;
+    }
+
     $details = $this->getCatalogueDetails($catalogue);
+
     if (count($details) == 3) {
       [$cat_id, $variant, $count] = $details;
     } else {
@@ -432,7 +437,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $text = $formatter->quote($text, 'string');
     $target = $formatter->quote($target, 'string');
-    $comments = $formatter->quote($comments, 'string');
+    $comments = $formatter->quote($comments . 'update', 'string');
 
     $time = date('Y-m-d h:i:s');
 
