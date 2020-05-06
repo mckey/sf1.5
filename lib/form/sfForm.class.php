@@ -28,49 +28,49 @@
 class sfForm implements ArrayAccess, Iterator, Countable
 {
   protected static
-    $CSRFSecret        = false,
-    $CSRFFieldName     = '_csrf_token',
+    $CSRFSecret = false,
+    $CSRFFieldName = '_csrf_token',
     $toStringException = null;
 
   /** @var sfWidgetFormSchema|sfWidget[]|sfWidgetFormSchemaDecorator[] */
-  protected $widgetSchema    = null;
+  protected $widgetSchema = null;
   /** @var sfValidatorSchema|sfValidatorBase[] */
   protected $validatorSchema = null;
   /** @var sfValidatorErrorSchema|sfValidatorError[] */
-  protected $errorSchema     = null;
+  protected $errorSchema = null;
   /** @var sfFormFieldSchema|null */
   protected $formFieldSchema = null;
   /** @var sfFormField[] */
-  protected $formFields      = array();
+  protected $formFields      = [];
   protected $isBound         = false;
-  protected $taintedValues   = array();
-  protected $taintedFiles    = array();
+  protected $taintedValues   = [];
+  protected $taintedFiles    = [];
   protected $values          = null;
-  protected $defaults        = array();
-  protected $fieldNames      = array();
-  protected $options         = array();
+  protected $defaults        = [];
+  protected $fieldNames      = [];
+  protected $options         = [];
   protected $count           = 0;
   protected $localCSRFSecret = null;
   /** @var sfForm[] */
-  protected $embeddedForms   = array();
+  protected $embeddedForms = [];
 
   /**
    * Constructor.
    *
-   * @param array  $defaults    An array of field default values
-   * @param array  $options     An array of options
-   * @param string $CSRFSecret  A CSRF secret
+   * @param array  $defaults   An array of field default values
+   * @param array  $options    An array of options
+   * @param string $CSRFSecret A CSRF secret
    */
-  public function __construct($defaults = array(), $options = array(), $CSRFSecret = null)
+  public function __construct($defaults = [], $options = [], $CSRFSecret = null)
   {
-    $this->setDefaults($defaults);
     $this->options = $options;
     $this->localCSRFSecret = $CSRFSecret;
 
     $this->validatorSchema = new sfValidatorSchema();
-    $this->widgetSchema    = new sfWidgetFormSchema();
-    $this->errorSchema     = new sfValidatorErrorSchema($this->validatorSchema);
+    $this->widgetSchema = new sfWidgetFormSchema();
+    $this->errorSchema = new sfValidatorErrorSchema($this->validatorSchema);
 
+    $this->setDefaults($defaults);
     $this->setup();
     $this->configure();
 
@@ -87,16 +87,13 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function __toString()
   {
-    try
-    {
+    try {
       return $this->render();
-    }
-    catch (Exception $e)
-    {
+    } catch (Exception $e) {
       self::setToStringException($e);
 
       // we return a simple Exception message in case the form framework is used out of symfony.
-      return 'Exception: '.$e->getMessage();
+      return 'Exception: ' . $e->getMessage();
     }
   }
 
@@ -123,11 +120,11 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Renders the widget schema associated with this form.
    *
-   * @param  array  $attributes  An array of HTML attributes
+   * @param array $attributes An array of HTML attributes
    *
    * @return string The rendered widget schema
    */
-  public function render($attributes = array())
+  public function render($attributes = [])
   {
     return $this->getFormFieldSchema()->render($attributes);
   }
@@ -135,12 +132,12 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Renders the widget schema using a specific form formatter
    *
-   * @param  string  $formatterName  The form formatter name
-   * @param  array   $attributes     An array of HTML attributes
+   * @param string $formatterName The form formatter name
+   * @param array  $attributes    An array of HTML attributes
    *
    * @return string The rendered widget schema
    */
-  public function renderUsing($formatterName, $attributes = array())
+  public function renderUsing($formatterName, $attributes = [])
   {
     $currentFormatterName = $this->widgetSchema->getFormFormatterName();
 
@@ -184,7 +181,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function hasGlobalErrors()
   {
-    return (Boolean) count($this->getGlobalErrors());
+    return (boolean)count($this->getGlobalErrors());
   }
 
   /**
@@ -202,49 +199,44 @@ class sfForm implements ArrayAccess, Iterator, Countable
    *
    * It triggers the validator schema validation.
    *
-   * @param array $taintedValues  An array of input values
-   * @param array $taintedFiles   An array of uploaded files (in the $_FILES or $_GET format)
+   * @param array $taintedValues An array of input values
+   * @param array $taintedFiles  An array of uploaded files (in the $_FILES or $_GET format)
    */
   public function bind(array $taintedValues = null, array $taintedFiles = null)
   {
     $this->taintedValues = $taintedValues;
-    $this->taintedFiles  = $taintedFiles;
+    $this->taintedFiles = $taintedFiles;
     $this->isBound = true;
     $this->resetFormFields();
 
-    if (null === $this->taintedValues)
-    {
-      $this->taintedValues = array();
+    if (null === $this->taintedValues) {
+      $this->taintedValues = [];
     }
 
-    if (null === $this->taintedFiles)
-    {
-      if ($this->isMultipart())
-      {
-        throw new InvalidArgumentException('This form is multipart, which means you need to supply a files array as the bind() method second argument.');
+    if (null === $this->taintedFiles) {
+      if ($this->isMultipart()) {
+        throw new InvalidArgumentException(
+          'This form is multipart, which means you need to supply a files array as the bind() method second argument.'
+        );
       }
 
-      $this->taintedFiles = array();
+      $this->taintedFiles = [];
     }
 
     $this->checkTaintedValues($this->taintedValues);
 
-    try
-    {
+    try {
       $this->doBind(self::deepArrayUnion($this->taintedValues, self::convertFileInformation($this->taintedFiles)));
       $this->errorSchema = new sfValidatorErrorSchema($this->validatorSchema);
 
       // remove CSRF token
       unset($this->values[self::$CSRFFieldName]);
-    }
-    catch (sfValidatorErrorSchema $e)
-    {
-      $this->values = array();
+    } catch (sfValidatorErrorSchema $e) {
+      $this->values = [];
       $this->errorSchema = $e;
     }
 
-    if ($this->embeddedForms)
-    {
+    if ($this->embeddedForms) {
       $this->bindEmbeddedForms($this->taintedValues, $this->taintedFiles);
     }
   }
@@ -267,15 +259,14 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function bindEmbeddedForms(array $taintedValues = null, array $taintedFiles = null)
   {
-    foreach ($this->embeddedForms as $name => $form)
-    {
+    foreach ($this->embeddedForms as $name => $form) {
       // remove CSRF token
       unset($form[self::$CSRFFieldName]);
 
       // bind
       $form->bind(
-        isset($taintedValues[$name]) ? $taintedValues[$name] : array(),
-        isset($taintedFiles[$name]) ? $taintedFiles[$name] : array()
+        isset($taintedValues[$name]) ? $taintedValues[$name] : [],
+        isset($taintedFiles[$name]) ? $taintedFiles[$name] : []
       );
 
       // set values for current form
@@ -290,8 +281,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
       $form->setWidgetSchema($this->widgetSchema[$name]->getWidget());
 
       // update errorSchema
-      if ($form->hasErrors())
-      {
+      if ($form->hasErrors()) {
         $this->errorSchema->addError($form->getErrorSchema(), $name);
       }
     }
@@ -328,10 +318,8 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function updateValuesEmbeddedForms(array $values)
   {
-    foreach ($this->embeddedForms as $name => $form)
-    {
-      if (isset($values[$name]))
-      {
+    foreach ($this->embeddedForms as $name => $form) {
+      if (isset($values[$name])) {
         $form->updateValues($values[$name]);
         $this->values[$name] = $form->getValues();
       }
@@ -345,9 +333,8 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function getTaintedValues()
   {
-    if (!$this->isBound)
-    {
-      return array();
+    if (!$this->isBound) {
+      return [];
     }
 
     return $this->taintedValues;
@@ -362,8 +349,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function isValid()
   {
-    if (!$this->isBound)
-    {
+    if (!$this->isBound) {
       return false;
     }
 
@@ -379,8 +365,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function hasErrors()
   {
-    if (!$this->isBound)
-    {
+    if (!$this->isBound) {
       return false;
     }
 
@@ -396,7 +381,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function getValues()
   {
-    return $this->isBound ? $this->values : array();
+    return $this->isBound ? $this->values : [];
   }
 
   /**
@@ -404,7 +389,8 @@ class sfForm implements ArrayAccess, Iterator, Countable
    *
    * If the form is not bound, it will return null.
    *
-   * @param  string  $field  The name of the value required
+   * @param string $field The name of the value required
+   *
    * @return string  The cleaned value
    */
   public function getValue($field)
@@ -421,8 +407,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function getName()
   {
-    if ('[%s]' != substr($nameFormat = $this->widgetSchema->getNameFormat(), -4))
-    {
+    if ('[%s]' != substr($nameFormat = $this->widgetSchema->getNameFormat(), -4)) {
       return false;
     }
 
@@ -442,15 +427,14 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Embeds a sfForm into the current form.
    *
-   * @param string $name       The field name
-   * @param sfForm $form       A sfForm instance
-   * @param string $decorator  A HTML decorator for the embedded form
+   * @param string $name      The field name
+   * @param sfForm $form      A sfForm instance
+   * @param string $decorator A HTML decorator for the embedded form
    */
   public function embedForm($name, sfForm $form, $decorator = null)
   {
-    $name = (string) $name;
-    if (true === $this->isBound() || true === $form->isBound())
-    {
+    $name = (string)$name;
+    if (true === $this->isBound() || true === $form->isBound()) {
       throw new LogicException('A bound form cannot be embedded');
     }
 
@@ -487,16 +471,15 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Returns an embedded form.
    *
-   * @param  string $name The name used to embed the form
-   *
-   * @return sfForm
+   * @param string $name The name used to embed the form
    *
    * @throws InvalidArgumentException If there is no form embedded with the supplied name
+   * @return sfForm
+   *
    */
   public function getEmbeddedForm($name)
   {
-    if (!isset($this->embeddedForms[$name]))
-    {
+    if (!isset($this->embeddedForms[$name])) {
       throw new InvalidArgumentException(sprintf('There is no embedded "%s" form.', $name));
     }
 
@@ -507,14 +490,13 @@ class sfForm implements ArrayAccess, Iterator, Countable
    * Merges current form widget and validator schemas with the ones from the
    * sfForm object passed as parameter. Please note it also merge defaults.
    *
-   * @param  sfForm   $form      The sfForm instance to merge with current form
+   * @param sfForm $form The sfForm instance to merge with current form
    *
    * @throws LogicException      If one of the form has already been bound
    */
   public function mergeForm(sfForm $form)
   {
-    if (true === $this->isBound() || true === $form->isBound())
-    {
+    if (true === $this->isBound() || true === $form->isBound()) {
       throw new LogicException('A bound form cannot be merged');
     }
 
@@ -523,13 +505,11 @@ class sfForm implements ArrayAccess, Iterator, Countable
 
     $this->defaults = $form->getDefaults() + $this->defaults;
 
-    foreach ($form->getWidgetSchema()->getPositions() as $field)
-    {
+    foreach ($form->getWidgetSchema()->getPositions() as $field) {
       $this->widgetSchema[$field] = $form->getWidget($field);
     }
 
-    foreach ($form->getValidatorSchema()->getFields() as $field => $validator)
-    {
+    foreach ($form->getValidatorSchema()->getFields() as $field => $validator) {
       $this->validatorSchema[$field] = $validator;
     }
 
@@ -549,21 +529,21 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function mergePreValidator(sfValidatorBase $validator = null)
   {
-    if (null === $validator)
-    {
+    if (null === $validator) {
       return;
     }
 
-    if (null === $this->validatorSchema->getPreValidator())
-    {
+    if (null === $this->validatorSchema->getPreValidator()) {
       $this->validatorSchema->setPreValidator($validator);
-    }
-    else
-    {
-      $this->validatorSchema->setPreValidator(new sfValidatorAnd(array(
-        $this->validatorSchema->getPreValidator(),
-        $validator,
-      )));
+    } else {
+      $this->validatorSchema->setPreValidator(
+        new sfValidatorAnd(
+          [
+            $this->validatorSchema->getPreValidator(),
+            $validator,
+          ]
+        )
+      );
     }
   }
 
@@ -574,21 +554,21 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function mergePostValidator(sfValidatorBase $validator = null)
   {
-    if (null === $validator)
-    {
+    if (null === $validator) {
       return;
     }
 
-    if (null === $this->validatorSchema->getPostValidator())
-    {
+    if (null === $this->validatorSchema->getPostValidator()) {
       $this->validatorSchema->setPostValidator($validator);
-    }
-    else
-    {
-      $this->validatorSchema->setPostValidator(new sfValidatorAnd(array(
-        $this->validatorSchema->getPostValidator(),
-        $validator,
-      )));
+    } else {
+      $this->validatorSchema->setPostValidator(
+        new sfValidatorAnd(
+          [
+            $this->validatorSchema->getPostValidator(),
+            $validator,
+          ]
+        )
+      );
     }
   }
 
@@ -616,8 +596,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function setValidator($name, sfValidatorBase $validator)
   {
-    if (isset($this->embeddedForms[$name]))
-    {
+    if (isset($this->embeddedForms[$name])) {
       throw new LogicException('You cannot set a validator for an embedded form.');
     }
 
@@ -631,19 +610,17 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Gets a validator for the given field name.
    *
-   * @param  string      $name      The field name
+   * @param string $name The field name
    *
    * @return sfValidatorBase $validator The validator
    */
   public function getValidator($name)
   {
-    if (!isset($this->validatorSchema[$name]))
-    {
+    if (!isset($this->validatorSchema[$name])) {
       throw new InvalidArgumentException(sprintf('The validator "%s" does not exist.', $name));
     }
 
-    if (isset($this->embeddedForms[$name]))
-    {
+    if (isset($this->embeddedForms[$name])) {
       return $this->embeddedForms[$name]->getValidatorSchema();
     }
 
@@ -710,14 +687,13 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Gets a widget for the given field name.
    *
-   * @param  string       $name      The field name
+   * @param string $name The field name
    *
    * @return sfWidgetForm $widget The widget
    */
   public function getWidget($name)
   {
-    if (!isset($this->widgetSchema[$name]))
-    {
+    if (!isset($this->widgetSchema[$name])) {
       throw new InvalidArgumentException(sprintf('The widget "%s" does not exist.', $name));
     }
 
@@ -840,7 +816,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Returns true if the form has a default value for a form field.
    *
-   * @param string $name   The field name
+   * @param string $name The field name
    *
    * @return Boolean true if the form has a default value for this field, false otherwise
    */
@@ -860,11 +836,10 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function setDefaults($defaults)
   {
-    $this->defaults = null === $defaults ? array() : $defaults;
+    $this->defaults = null === $defaults ? [] : $defaults;
 
-    if ($this->isCSRFProtected())
-    {
-      $this->setDefault(self::$CSRFFieldName, $this->getCSRFToken($this->localCSRFSecret ?: self::$CSRFSecret));
+    if ($this->isCSRFProtected()) {
+      $this->setDefault(self::$CSRFFieldName, $this->getCSRFToken($this->localCSRFSecret ? : self::$CSRFSecret));
     }
 
     $this->resetFormFields();
@@ -891,21 +866,17 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function addCSRFProtection($secret = null)
   {
-    if (null === $secret)
-    {
+    if (null === $secret) {
       $secret = $this->localCSRFSecret;
     }
 
-    if (false === $secret || (null === $secret && false === self::$CSRFSecret))
-    {
+    if (false === $secret || (null === $secret && false === self::$CSRFSecret)) {
       return $this;
     }
 
-    if (null === $secret)
-    {
-      if (null === self::$CSRFSecret)
-      {
-        self::$CSRFSecret = md5(__FILE__.php_uname());
+    if (null === $secret) {
+      if (null === self::$CSRFSecret) {
+        self::$CSRFSecret = md5(__FILE__ . php_uname());
       }
 
       $secret = self::$CSRFSecret;
@@ -913,7 +884,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
 
     $token = $this->getCSRFToken($secret);
 
-    $this->validatorSchema[self::$CSRFFieldName] = new sfValidatorCSRFToken(array('token' => $token));
+    $this->validatorSchema[self::$CSRFFieldName] = new sfValidatorCSRFToken(['token' => $token]);
     $this->widgetSchema[self::$CSRFFieldName] = new sfWidgetFormInputHidden();
     $this->setDefault(self::$CSRFFieldName, $token);
 
@@ -926,18 +897,17 @@ class sfForm implements ArrayAccess, Iterator, Countable
    * If you want to change the algorithm used to compute the token, you
    * can override this method.
    *
-   * @param  string $secret The secret string to use (null to use the current secret)
+   * @param string $secret The secret string to use (null to use the current secret)
    *
    * @return string A token string
    */
   public function getCSRFToken($secret = null)
   {
-    if (null === $secret)
-    {
-      $secret = $this->localCSRFSecret ?: self::$CSRFSecret;
+    if (null === $secret) {
+      $secret = $this->localCSRFSecret ? : self::$CSRFSecret;
     }
 
-    return md5($secret.session_id().get_class($this));
+    return md5($secret . session_id() . get_class($this));
   }
 
   /**
@@ -1028,40 +998,46 @@ class sfForm implements ArrayAccess, Iterator, Countable
    * and converts PUT and DELETE methods to a hidden field
    * for later processing.
    *
-   * @param  string $url         The URL for the action
-   * @param  array  $attributes  An array of HTML attributes
+   * @param string $url        The URL for the action
+   * @param array  $attributes An array of HTML attributes
    *
    * @return string An HTML representation of the opening form tag
    */
-  public function renderFormTag($url, array $attributes = array())
+  public function renderFormTag($url, array $attributes = [])
   {
     $attributes['action'] = $url;
     $attributes['method'] = isset($attributes['method']) ? strtolower($attributes['method']) : 'post';
-    if ($this->isMultipart())
-    {
+    if ($this->isMultipart()) {
       $attributes['enctype'] = 'multipart/form-data';
     }
 
     $html = '';
-    if (!in_array($attributes['method'], array('get', 'post')))
-    {
-      $html = $this->getWidgetSchema()->renderTag('input', array('type' => 'hidden', 'name' => 'sf_method', 'value' => $attributes['method'], 'id' => false));
+    if (!in_array($attributes['method'], ['get', 'post'])) {
+      $html = $this->getWidgetSchema()->renderTag(
+        'input',
+        [
+          'type'  => 'hidden',
+          'name'  => 'sf_method',
+          'value' => $attributes['method'],
+          'id'    => false,
+        ]
+      );
       $attributes['method'] = 'post';
     }
 
-    return sprintf('<form%s>', $this->getWidgetSchema()->attributesToHtml($attributes)).$html;
+    return sprintf('<form%s>', $this->getWidgetSchema()->attributesToHtml($attributes)) . $html;
   }
 
   public function resetFormFields()
   {
-    $this->formFields = array();
+    $this->formFields = [];
     $this->formFieldSchema = null;
   }
 
   /**
    * Returns true if the bound field exists (implements the ArrayAccess interface).
    *
-   * @param  string $name The name of the bound field
+   * @param string $name The name of the bound field
    *
    * @return Boolean true if the widget exists, false otherwise
    */
@@ -1073,35 +1049,36 @@ class sfForm implements ArrayAccess, Iterator, Countable
   /**
    * Returns the form field associated with the name (implements the ArrayAccess interface).
    *
-   * @param  string $name  The offset of the value to get
+   * @param string $name The offset of the value to get
    *
    * @return sfFormField|sfFormFieldSchema A form field instance
    */
   public function offsetGet($name)
   {
-    if (!isset($this->formFields[$name]))
-    {
-      if (!$widget = $this->widgetSchema[$name])
-      {
+    if (!isset($this->formFields[$name])) {
+      if (!$widget = $this->widgetSchema[$name]) {
         throw new InvalidArgumentException(sprintf('Widget "%s" does not exist.', $name));
       }
 
-      if ($this->isBound)
-      {
+      if ($this->isBound) {
         $value = isset($this->taintedValues[$name]) ? $this->taintedValues[$name] : null;
-      }
-      else if (isset($this->defaults[$name]))
-      {
-        $value = $this->defaults[$name];
-      }
-      else
-      {
-        $value = $widget instanceof sfWidgetFormSchema ? $widget->getDefaults() : $widget->getDefault();
+      } else {
+        if (isset($this->defaults[$name])) {
+          $value = $this->defaults[$name];
+        } else {
+          $value = $widget instanceof sfWidgetFormSchema ? $widget->getDefaults() : $widget->getDefault();
+        }
       }
 
       $class = $widget instanceof sfWidgetFormSchema ? 'sfFormFieldSchema' : 'sfFormField';
 
-      $this->formFields[$name] = new $class($widget, $this->getFormFieldSchema(), $name, $value, $this->errorSchema[$name]);
+      $this->formFields[$name] = new $class(
+        $widget,
+        $this->getFormFieldSchema(),
+        $name,
+        $value,
+        $this->errorSchema[$name]
+      );
     }
 
     return $this->formFields[$name];
@@ -1111,7 +1088,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    * Throws an exception saying that values cannot be set (implements the ArrayAccess interface).
    *
    * @param string $offset (ignored)
-   * @param string $value (ignored)
+   * @param string $value  (ignored)
    *
    * @throws <b>LogicException</b>
    */
@@ -1149,24 +1126,21 @@ class sfForm implements ArrayAccess, Iterator, Countable
    * @param array   $fields  An array of field names
    * @param Boolean $ordered Whether to use the array of field names to reorder the fields
    */
-  public function useFields(array $fields = array(), $ordered = true)
+  public function useFields(array $fields = [], $ordered = true)
   {
-    $hidden = array();
+    $hidden = [];
 
-    foreach ($this as $name => $field)
-    {
-      if ($field->isHidden())
-      {
+    foreach ($this as $name => $field) {
+      if ($field->isHidden()) {
         $hidden[] = $name;
-      }
-      else if (!in_array($name, $fields))
-      {
-        unset($this[$name]);
+      } else {
+        if (!in_array($name, $fields)) {
+          unset($this[$name]);
+        }
       }
     }
 
-    if ($ordered)
-    {
+    if ($ordered) {
       $this->widgetSchema->setPositions(array_merge($fields, $hidden));
     }
   }
@@ -1178,8 +1152,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function getFormFieldSchema()
   {
-    if (null === $this->formFieldSchema)
-    {
+    if (null === $this->formFieldSchema) {
       $values = $this->isBound ? $this->taintedValues : $this->defaults + $this->widgetSchema->getDefaults();
 
       $this->formFieldSchema = new sfFormFieldSchema($this->widgetSchema, null, null, $values, $this->errorSchema);
@@ -1195,29 +1168,23 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   public function getErrors()
   {
-    $errors = array();
+    $errors = [];
 
-    if ($this->hasGlobalErrors())
-    {
-      $errors['_globals'] = array();
-      foreach ($this->getGlobalErrors() as $name => $error)
-      {
+    if ($this->hasGlobalErrors()) {
+      $errors['_globals'] = [];
+      foreach ($this->getGlobalErrors() as $name => $error) {
         $errors['_globals'][$name] = $error->getMessage();
       }
     }
 
-    foreach ($this as $name => $field)
-    {
-      if (!($field instanceof sfFormFieldSchema) && $field->hasError())
-      {
+    foreach ($this as $name => $field) {
+      if (!($field instanceof sfFormFieldSchema) && $field->hasError()) {
         $errors[$this->widgetSchema->getFormFormatter()->generateLabelName($name)] = $field->getError()->getMessage();
       }
     }
 
-    foreach ($this->getEmbeddedForms() as $name => $form)
-    {
-      if ($form->hasErrors())
-      {
+    foreach ($this->getEmbeddedForms() as $name => $form) {
+      if ($form->hasErrors()) {
         $errors[$name] = $form->getErrors();
       }
     }
@@ -1290,15 +1257,14 @@ class sfForm implements ArrayAccess, Iterator, Countable
    *
    * It's safe to pass an already converted array, in which case this method just returns the original array unmodified.
    *
-   * @param  array $taintedFiles An array representing uploaded file information
+   * @param array $taintedFiles An array representing uploaded file information
    *
    * @return array An array of re-ordered uploaded file information
    */
   static public function convertFileInformation(array $taintedFiles)
   {
-    $files = array();
-    foreach ($taintedFiles as $key => $data)
-    {
+    $files = [];
+    foreach ($taintedFiles as $key => $data) {
       $files[$key] = self::fixPhpFilesArray($data);
     }
 
@@ -1307,29 +1273,28 @@ class sfForm implements ArrayAccess, Iterator, Countable
 
   static protected function fixPhpFilesArray($data)
   {
-    $fileKeys = array('error', 'name', 'size', 'tmp_name', 'type');
+    $fileKeys = ['error', 'name', 'size', 'tmp_name', 'type'];
     $keys = array_keys($data);
     sort($keys);
 
-    if ($fileKeys != $keys || !isset($data['name']) || !is_array($data['name']))
-    {
+    if ($fileKeys != $keys || !isset($data['name']) || !is_array($data['name'])) {
       return $data;
     }
 
     $files = $data;
-    foreach ($fileKeys as $k)
-    {
+    foreach ($fileKeys as $k) {
       unset($files[$k]);
     }
-    foreach (array_keys($data['name']) as $key)
-    {
-      $files[$key] = self::fixPhpFilesArray(array(
-        'error'    => $data['error'][$key],
-        'name'     => $data['name'][$key],
-        'type'     => $data['type'][$key],
-        'tmp_name' => $data['tmp_name'][$key],
-        'size'     => $data['size'][$key],
-      ));
+    foreach (array_keys($data['name']) as $key) {
+      $files[$key] = self::fixPhpFilesArray(
+        [
+          'error'    => $data['error'][$key],
+          'name'     => $data['name'][$key],
+          'type'     => $data['type'][$key],
+          'tmp_name' => $data['tmp_name'][$key],
+          'size'     => $data['size'][$key],
+        ]
+      );
     }
 
     return $files;
@@ -1368,20 +1333,18 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   static public function setToStringException(Exception $e)
   {
-    if (null === self::$toStringException)
-    {
+    if (null === self::$toStringException) {
       self::$toStringException = $e;
     }
   }
 
   public function __clone()
   {
-    $this->widgetSchema    = clone $this->widgetSchema;
+    $this->widgetSchema = clone $this->widgetSchema;
     $this->validatorSchema = clone $this->validatorSchema;
 
     // we rebind the cloned form because Exceptions are not clonable
-    if ($this->isBound())
-    {
+    if ($this->isBound()) {
       $this->bind($this->taintedValues, $this->taintedFiles);
     }
   }
@@ -1396,14 +1359,10 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   static protected function deepArrayUnion($array1, $array2)
   {
-    foreach ($array2 as $key => $value)
-    {
-      if (is_array($value) && isset($array1[$key]) && is_array($array1[$key]))
-      {
+    foreach ($array2 as $key => $value) {
+      if (is_array($value) && isset($array1[$key]) && is_array($array1[$key])) {
         $array1[$key] = self::deepArrayUnion($array1[$key], $value);
-      }
-      else
-      {
+      } else {
         $array1[$key] = $value;
       }
     }
@@ -1419,8 +1378,7 @@ class sfForm implements ArrayAccess, Iterator, Countable
    */
   protected function checkTaintedValues($values)
   {
-    foreach ($values as $name => $value)
-    {
+    foreach ($values as $name => $value) {
       if (!is_array($value)) {
         continue;
       }
