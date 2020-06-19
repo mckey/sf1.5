@@ -26,15 +26,15 @@ class sfValidatorBoolean extends sfValidatorBase
    *  * true_values:  The list of true values
    *  * false_values: The list of false values
    *
-   * @param array $options    An array of options
-   * @param array $messages   An array of error messages
+   * @param array $options  An array of options
+   * @param array $messages An array of error messages
    *
    * @see sfValidatorBase
    */
-  protected function configure($options = array(), $messages = array())
+  protected function configure($options = [], $messages = [])
   {
-    $this->addOption('true_values', array('true', 't', 'yes', 'y', 'on', '1'));
-    $this->addOption('false_values', array('false', 'f', 'no', 'n', 'off', '0'));
+    $this->addOption('true_values', ['true', 't', 'yes', 'y', 'on', '1', 1, true]);
+    $this->addOption('false_values', ['false', 'f', 'no', 'n', 'off', '0', 0, false]);
 
     $this->setOption('required', false);
     $this->setOption('empty_value', false);
@@ -45,16 +45,14 @@ class sfValidatorBoolean extends sfValidatorBase
    */
   protected function doClean($value)
   {
-    if (in_array($value, $this->getOption('true_values')))
-    {
+    if (in_array($value, $this->getOption('true_values'), true)) {
       return true;
     }
 
-    if (in_array($value, $this->getOption('false_values')))
-    {
+    if (in_array($value, $this->getOption('false_values'), true)) {
       return false;
     }
 
-    throw new sfValidatorError($this, 'invalid', array('value' => $value));
+    throw new sfValidatorError($this, 'invalid', ['value' => $value]);
   }
 }
