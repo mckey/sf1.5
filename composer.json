@@ -10,7 +10,8 @@
     "ext-curl": "*",
     "ext-zlib": "*",
     "ext-calendar": "*",
-    "ext-mbstring": "*"
+    "ext-mbstring": "*",
+    "ext-redis": "*"
   },
   "require-dev": {
     "psr/log": "*"
