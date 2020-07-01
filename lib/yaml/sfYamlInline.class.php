@@ -400,7 +400,7 @@ class sfYamlInline
       case ctype_digit($scalar):
         $raw = $scalar;
         $cast = (int) $scalar;
-        return '0' == $scalar[0] ? octdec($scalar) : (((string) $raw == (string) $cast) ? $cast : $raw);
+        return '0' == str_split($scalar)[0] ? octdec($scalar) : (((string) $raw == (string) $cast) ? $cast : $raw);
       case in_array(strtolower($scalar), $trueValues):
         return true;
       case in_array(strtolower($scalar), $falseValues):
