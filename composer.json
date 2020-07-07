@@ -11,7 +11,8 @@
     "ext-zlib": "*",
     "ext-calendar": "*",
     "ext-mbstring": "*",
-    "ext-redis": "*"
+    "ext-redis": "*",
+    "ext-sockets": "*"
   },
   "require-dev": {
     "psr/log": "*"
