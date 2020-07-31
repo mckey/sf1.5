@@ -96,21 +96,24 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
                                          'MEMBER',
                                          'MOD',
                                          'NEW',
-                                         'NOT',
-                                         'NULL',
-                                         'OBJECT',
-                                         'OF',
-                                         'OR',
-                                         'ORDER',
-                                         'OUTER',
-                                         'POSITION',
-                                         'SELECT',
-                                         'SOME',
-                                         'TRIM',
-                                         'TRUE',
-                                         'UNKNOWN',
-                                         'UPDATE',
-                                         'WHERE');
+      'NOT',
+      'NULL',
+      'OBJECT',
+      'OF',
+      'OR',
+      'ORDER',
+      'OUTER',
+      'POSITION',
+      'SELECT',
+      'SOME',
+      'SYSTEM',
+      'TRIM',
+      'TRUE',
+      'TYPE',
+      'UNKNOWN',
+      'UPDATE',
+      'WHERE',
+    );
 
     /**
      * @var array
@@ -128,15 +131,15 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
      */
     protected $_pendingAggregates = array();
 
-    /**
-     * @param boolean $needsSubquery
-     */
+  /**
+   * @param bool $needsSubquery
+   */
     protected $_needsSubquery = false;
 
-    /**
-     * @param boolean $isSubquery           whether or not this query object is a subquery of another
-     *                                      query object
-     */
+  /**
+   * @param bool $isSubquery              whether or not this query object is a subquery of another
+   *                                      query object
+   */
     protected $_isSubquery;
 
     /**
@@ -301,19 +304,20 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
         return false;
     }
 
-    /**
-     * isSubquery
-     * if $bool parameter is set this method sets the value of
-     * Doctrine_Query::$isSubquery. If this value is set to true
-     * the query object will not load the primary key fields of the selected
-     * components.
-     *
-     * If null is given as the first parameter this method retrieves the current
-     * value of Doctrine_Query::$isSubquery.
-     *
-     * @param boolean|null $bool     whether or not this query acts as a subquery
-     * @return $this|bool
-     */
+  /**
+   * isSubquery
+   * if $bool parameter is set this method sets the value of
+   * Doctrine_Query::$isSubquery. If this value is set to true
+   * the query object will not load the primary key fields of the selected
+   * components.
+   *
+   * If null is given as the first parameter this method retrieves the current
+   * value of Doctrine_Query::$isSubquery.
+   *
+   * @param bool|null $bool whether or not this query acts as a subquery
+   *
+   * @return $this|bool
+   */
     public function isSubquery($bool = null)
     {
         if ($bool === null) {
@@ -348,12 +352,12 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
         }
     }
 
-    /**
-     * Check if a dql alias has a sql aggregate alias
-     *
-     * @param string $dqlAlias
-     * @return boolean
-     */
+  /**
+   * Check if a dql alias has a sql aggregate alias
+   *
+   * @param string $dqlAlias
+   * @return bool
+   */
     public function hasSqlAggregateAlias($dqlAlias)
     {
         try {
@@ -416,14 +420,14 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
         return $this->_dqlParts[$queryPart];
     }
 
-    /**
-     * contains
-     *
-     * Method to check if a arbitrary piece of dql exists
-     *
-     * @param string $dql Arbitrary piece of dql to check for
-     * @return boolean
-     */
+  /**
+   * contains
+   *
+   * Method to check if a arbitrary piece of dql exists
+   *
+   * @param string $dql Arbitrary piece of dql to check for
+   * @return bool
+   */
     public function contains($dql)
     {
         return stripos($this->getDql(), $dql) === false ? false : true;
@@ -913,7 +917,7 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
     public function processPendingSubqueries()
     {
         foreach ($this->_pendingSubqueries as $value) {
-            list($dql, $alias) = $value;
+            [$dql, $alias] = $value;
 
             $subquery = $this->createSubquery();
 
@@ -945,7 +949,7 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
     {
         // iterate trhough all aggregates
         foreach ($this->_pendingAggregates as $aggregate) {
-            list($expression, $components, $alias) = $aggregate;
+            [$expression, $components, $alias] = $aggregate;
 
             $tableAliases = array();
 
@@ -1617,9 +1621,9 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
      * This information is needed in special scenarios like the limit-offset when its
      * used with an Oracle database.
      *
-     * @return boolean  TRUE if the query is ordered by a joined column, FALSE otherwise.
+     * @return bool  TRUE if the query is ordered by a joined column, FALSE otherwise.
      */
-    private function _isOrderedByJoinedColumn()
+  private function _isOrderedByJoinedColumn()
     {
         if (! $this->_queryComponents) {
             throw new Doctrine_Query_Exception('The query is in an invalid state for this '
@@ -1634,7 +1638,7 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
             if (strpos($part, '.') === false) {
                 continue;
             }
-            list($tableAlias, $columnName) = explode('.', $part);
+            [$tableAlias, $columnName] = explode('.', $part);
             if ($tableAlias != $mainTableAlias) {
                 return true;
             }
@@ -1648,12 +1652,12 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
      * first splits the query in parts and then uses individual
      * parsers for each part
      *
-     * @param string $query                 DQL query
-     * @param boolean $clear                whether or not to clear the aliases
+     * @param string $query DQL query
+     * @param bool   $clear whether or not to clear the aliases
      * @throws Doctrine_Query_Exception     if some generic parsing error occurs
      * @return $this
      */
-    public function parseDqlQuery($query, $clear = true)
+  public function parseDqlQuery($query, $clear = true)
     {
         if ($clear) {
             $this->clear();
@@ -1710,11 +1714,11 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
 
     /**
      * @todo Describe & refactor... too long and nested.
-     * @param string $path          component alias
-     * @param boolean $loadFields
+     * @param string $path component alias
+     * @param bool   $loadFields
      * @return array
      */
-    public function load($path, $loadFields = true)
+  public function load($path, $loadFields = true)
     {
         if (isset($this->_queryComponents[$path])) {
             return $this->_queryComponents[$path];
@@ -2178,10 +2182,10 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
      *          LEFT JOIN u.Phonenumber p
      *          WHERE p.phonenumber = '123 123'
      *
-     * @param array $params        an array of prepared statement parameters
-     * @return integer             the count of this query
+     * @param array $params an array of prepared statement parameters
+     * @return int             the count of this query
      */
-    public function count($params = array())
+  public function count($params = array())
     {
         $q      = $this->getCountSqlQuery();
         $params = $this->getCountQueryParams($params);
