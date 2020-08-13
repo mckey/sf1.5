@@ -23,8 +23,8 @@
  *
  * This is the base class for database based message sources like MySQL or SQLite.
  *
- * @author Xiang Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @version v1.0, last update on Fri Dec 24 16:18:44 EST 2004
+ * @author     Xiang Wei Zhuo <weizhuo[at]gmail[dot]com>
+ * @version    v1.0, last update on Fri Dec 24 16:18:44 EST 2004
  * @package    symfony
  * @subpackage i18n
  */
@@ -36,16 +36,16 @@ abstract class sfMessageSource_Database extends sfMessageSource
    * This function comes from PEAR's DB package.
    *
    * @param string $dsn DSN format, similar to PEAR's DB
-   * @return array DSN information. 
+   *
+   * @return array DSN information.
    */
-  protected function parseDSN($dsn)
+  protected function parseDSN(string $dsn)
   {
-    if (is_array($dsn))
-    {
+    if (is_array($dsn)) {
       return $dsn;
     }
 
-    $parsed = array(
+    $parsed = [
       'phptype'  => false,
       'dbsyntax' => false,
       'username' => false,
@@ -54,52 +54,42 @@ abstract class sfMessageSource_Database extends sfMessageSource
       'hostspec' => false,
       'port'     => false,
       'socket'   => false,
-      'database' => false
-    );
+      'database' => false,
+    ];
 
     // Find phptype and dbsyntax
-    if (($pos = strpos($dsn, '://')) !== false)
-    {
+    if (($pos = strpos($dsn, '://')) !== false) {
       $str = substr($dsn, 0, $pos);
       $dsn = substr($dsn, $pos + 3);
-    }
-    else
-    {
+    } else {
       $str = $dsn;
-      $dsn = NULL;
+      $dsn = null;
     }
 
     // Get phptype and dbsyntax
     // $str => phptype(dbsyntax)
-    if (preg_match('|^(.+?)\((.*?)\)$|', $str, $arr))
-    {
-      $parsed['phptype']  = $arr[1];
-      $parsed['dbsyntax'] = (empty($arr[2])) ? $arr[1] : $arr[2];
-    }
-    else
-    {
-      $parsed['phptype']  = $str;
+    if (preg_match('|^(.+?)\((.*?)\)$|', $str, $arr)) {
+      $parsed['phptype'] = $arr[1];
+      $parsed['dbsyntax'] = empty($arr[2]) ? $arr[1] : $arr[2];
+    } else {
+      $parsed['phptype'] = $str;
       $parsed['dbsyntax'] = $str;
     }
 
-    if (empty($dsn))
-    {
+    if (empty($dsn)) {
       return $parsed;
     }
 
     // Get (if found): username and password
     // $dsn => username:password@protocol+hostspec/database
-    if (($at = strrpos($dsn,'@')) !== false)
-    {
+    if (($at = strrpos($dsn, '@')) !== false) {
       $str = substr($dsn, 0, $at);
       $dsn = substr($dsn, $at + 1);
-      if (($pos = strpos($str, ':')) !== false)
-      {
+
+      if (($pos = strpos($str, ':')) !== false) {
         $parsed['username'] = rawurldecode(substr($str, 0, $pos));
         $parsed['password'] = rawurldecode(substr($str, $pos + 1));
-      }
-      else
-      {
+      } else {
         $parsed['username'] = rawurldecode($str);
       }
     }
@@ -107,25 +97,18 @@ abstract class sfMessageSource_Database extends sfMessageSource
     // Find protocol and hostspec
 
     // $dsn => proto(proto_opts)/database
-    if (preg_match('|^([^(]+)\((.*?)\)/?(.*?)$|', $dsn, $match))
-    {
-      $proto       = $match[1];
-      $proto_opts  = (!empty($match[2])) ? $match[2] : false;
-      $dsn         = $match[3];
-    // $dsn => protocol+hostspec/database (old format)
-    }
-    else
-    {
-      if (strpos($dsn, '+') !== false)
-      {
-        list($proto, $dsn) = explode('+', $dsn, 2);
+    if (preg_match('|^([^(]+)\((.*?)\)/?(.*?)$|', $dsn, $match)) {
+      $proto = $match[1];
+      $proto_opts = !empty($match[2]) ? $match[2] : false;
+      $dsn = $match[3];
+      // $dsn => protocol+hostspec/database (old format)
+    } else {
+      if (strpos($dsn, '+') !== false) {
+        [$proto, $dsn] = explode('+', $dsn, 2);
       }
-      if (strpos($dsn, '/') !== false)
-      {
-        list($proto_opts, $dsn) = explode('/', $dsn, 2);
-      }
-      else
-      {
+      if (strpos($dsn, '/') !== false) {
+        [$proto_opts, $dsn] = explode('/', $dsn, 2);
+      } else {
         $proto_opts = $dsn;
         $dsn = null;
       }
@@ -134,49 +117,36 @@ abstract class sfMessageSource_Database extends sfMessageSource
     // process the different protocol options
     $parsed['protocol'] = (!empty($proto)) ? $proto : 'tcp';
     $proto_opts = rawurldecode($proto_opts);
-    if ($parsed['protocol'] == 'tcp')
-    {
-      if (strpos($proto_opts, ':') !== false)
-      {
-        list($parsed['hostspec'], $parsed['port']) = explode(':', $proto_opts);
-      }
-      else
-      {
+    if ($parsed['protocol'] == 'tcp') {
+      if (strpos($proto_opts, ':') !== false) {
+        [$parsed['hostspec'], $parsed['port']] = explode(':', $proto_opts);
+      } else {
         $parsed['hostspec'] = $proto_opts;
       }
-    }
-    else if ($parsed['protocol'] == 'unix')
-    {
+    } elseif ($parsed['protocol'] == 'unix') {
       $parsed['socket'] = $proto_opts;
     }
 
     // Get dabase if any
     // $dsn => database
-    if (!empty($dsn))
-    {
+    if (!empty($dsn)) {
       // /database
-      if (($pos = strpos($dsn, '?')) === false)
-      {
+      if (($pos = strpos($dsn, '?')) === false) {
         $parsed['database'] = $dsn;
-      // /database?param1=value1&param2=value2
-      }
-      else
-      {
+        // /database?param1=value1&param2=value2
+      } else {
         $parsed['database'] = substr($dsn, 0, $pos);
         $dsn = substr($dsn, $pos + 1);
-        if (strpos($dsn, '&') !== false)
-        {
+
+        if (strpos($dsn, '&') !== false) {
           $opts = explode('&', $dsn);
+        } else { // database?param1=value1
+          $opts = [$dsn];
         }
-        else
-        { // database?param1=value1
-          $opts = array($dsn);
-        }
-        foreach ($opts as $opt)
-        {
-          list($key, $value) = explode('=', $opt);
-          if (!isset($parsed[$key]))
-          { // don't allow params overwrite
+        foreach ($opts as $opt) {
+          [$key, $value] = explode('=', $opt);
+
+          if (!isset($parsed[$key])) { // don't allow params overwrite
             $parsed[$key] = rawurldecode($value);
           }
         }
@@ -190,22 +160,21 @@ abstract class sfMessageSource_Database extends sfMessageSource
    * Gets all the variants of a particular catalogue.
    *
    * @param string $catalogue catalogue name
+   *
    * @return array list of all variants for this catalogue.
    */
   public function getCatalogueList($catalogue)
   {
     $variants = explode('_', $this->culture);
 
-    $catalogues = array($catalogue);
+    $catalogues = [$catalogue];
 
     $variant = null;
 
-    for ($i = 0, $max = count($variants); $i < $max; $i++)
-    {
-      if (strlen($variants[$i]) > 0)
-      {
-        $variant .= $variant ? '_'.$variants[$i] : $variants[$i];
-        $catalogues[] = $catalogue.'.'.$variant;
+    for ($i = 0, $max = count($variants); $i < $max; $i++) {
+      if (strlen($variants[$i]) > 0) {
+        $variant .= $variant ? '_' . $variants[$i] : $variants[$i];
+        $catalogues[] = $catalogue . '.' . $variant;
       }
     }
 

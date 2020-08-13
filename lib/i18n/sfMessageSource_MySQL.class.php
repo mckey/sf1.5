@@ -93,18 +93,21 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
 {
   /**
    * The datasource string, full DSN to the database.
+   *
    * @var string
    */
-  protected $source;
+  protected string $source;
 
   /**
    * The DSN array property, parsed by PEAR's DB DSN parser.
+   *
    * @var array
    */
-  protected $dsn;
+  protected array $dsn;
 
   /**
    * A resource link to the database
+   *
    * @var db
    */
   protected $db;
@@ -113,12 +116,13 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * Constructor.
    * Creates a new message source using MySQL.
    *
-   * @param string $source  MySQL datasource, in PEAR's DB DSN format.
+   * @param string $source MySQL datasource, in PEAR's DB DSN format.
+   *
    * @see MessageSource::factory();
    */
-  function __construct($source)
+  public function __construct($source)
   {
-    $this->source = (string) $source;
+    $this->source = (string)$source;
     $this->dsn = $this->parseDSN($this->source);
     $this->db = $this->connect();
   }
@@ -126,7 +130,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
   /**
    * Destructor, closes the database connection.
    */
-  function __destruct()
+  public function __destruct()
   {
     @mysql_close($this->db);
   }
@@ -134,23 +138,19 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
   /**
    * Connects to the MySQL datasource
    *
-   * @return resource MySQL connection.
    * @throws sfException, connection and database errors.
+   * @return resource MySQL connection.
    */
   protected function connect()
   {
     $dsninfo = $this->dsn;
 
-    if (isset($dsninfo['protocol']) && $dsninfo['protocol'] == 'unix')
-    {
-      $dbhost = ':'.$dsninfo['socket'];
-    }
-    else
-    {
-      $dbhost = $dsninfo['hostspec'] ?: 'localhost';
-      if (!empty($dsninfo['port']))
-      {
-        $dbhost .= ':'.$dsninfo['port'];
+    if (isset($dsninfo['protocol']) && $dsninfo['protocol'] == 'unix') {
+      $dbhost = ':' . $dsninfo['socket'];
+    } else {
+      $dbhost = $dsninfo['hostspec'] ? : 'localhost';
+      if (!empty($dsninfo['port'])) {
+        $dbhost .= ':' . $dsninfo['port'];
       }
     }
     $user = $dsninfo['username'];
@@ -158,42 +158,31 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
 
     $connect_function = 'mysql_connect';
 
-    if (!function_exists($connect_function))
-    {
-      throw new RuntimeException('The function mysql_connect() does not exist. Please confirm MySQL is enabled in php.ini');
+    if (!function_exists($connect_function)) {
+      throw new RuntimeException(
+        'The function mysql_connect() does not exist. Please confirm MySQL is enabled in php.ini'
+      );
     }
 
-    if ($dbhost && $user && $pw)
-    {
+    if ($dbhost && $user && $pw) {
       $conn = @$connect_function($dbhost, $user, $pw);
-    }
-    elseif ($dbhost && $user)
-    {
+    } elseif ($dbhost && $user) {
       $conn = @$connect_function($dbhost, $user);
-    }
-    elseif ($dbhost)
-    {
+    } elseif ($dbhost) {
       $conn = @$connect_function($dbhost);
-    }
-    else
-    {
+    } else {
       $conn = false;
     }
 
-    if (empty($conn))
-    {
+    if (empty($conn)) {
       throw new sfException(sprintf('Error in connecting to %s.', $dsninfo));
     }
 
-    if ($dsninfo['database'])
-    {
-      if (!@mysql_select_db($dsninfo['database'], $conn))
-      {
+    if ($dsninfo['database']) {
+      if (!@mysql_select_db($dsninfo['database'], $conn)) {
         throw new sfException(sprintf('Error in connecting database, dsn: %s.', $dsninfo));
       }
-    }
-    else
-    {
+    } else {
       throw new sfException('Please provide a database for message translation.');
     }
 
@@ -214,6 +203,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * Gets an array of messages for a particular catalogue and cultural variant.
    *
    * @param string $variant the catalogue name + variant
+   *
    * @return array translation messages.
    */
   public function &loadData($variant)
@@ -229,10 +219,9 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
 
     $rs = mysql_query($statement, $this->db);
 
-    $result = array();
+    $result = [];
 
-    while ($row = mysql_fetch_array($rs, MYSQL_NUM))
-    {
+    while ($row = mysql_fetch_array($rs, MYSQL_NUM)) {
       $source = $row[1];
       $result[$source][] = $row[2]; //target
       $result[$source][] = $row[0]; //id
@@ -247,6 +236,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * We need to query the database to get the date_modified.
    *
    * @param string $source catalogue+variant
+   *
    * @return int last modified in unix-time format.
    */
   protected function getLastModified($source)
@@ -262,11 +252,12 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * Checks if a particular catalogue+variant exists in the database.
    *
    * @param string $variant catalogue+variant
-   * @return boolean true if the catalogue+variant is in the database, false otherwise.
+   *
+   * @return bool true if the catalogue+variant is in the database, false otherwise.
    */
   public function isValidSource($variant)
   {
-    $variant = mysql_real_escape_string ($variant, $this->db);
+    $variant = mysql_real_escape_string($variant, $this->db);
 
     $rs = mysql_query("SELECT COUNT(*) FROM catalogue WHERE name = '{$variant}'", $this->db);
 
@@ -279,40 +270,39 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * Retrieves catalogue details, array($cat_id, $variant, $count).
    *
    * @param string $catalogue catalogue
+   *
    * @return array catalogue details, array($cat_id, $variant, $count).
    */
   protected function getCatalogueDetails($catalogue = 'messages')
   {
-    if (empty($catalogue))
-    {
+    if (empty($catalogue)) {
       $catalogue = 'messages';
     }
 
-    $variant = $catalogue.'.'.$this->culture;
+    $variant = $catalogue . '.' . $this->culture;
 
     $name = mysql_real_escape_string($this->getSource($variant), $this->db);
 
     $rs = mysql_query("SELECT cat_id FROM catalogue WHERE name = '{$name}'", $this->db);
 
-    if (mysql_num_rows($rs) != 1)
-    {
+    if (mysql_num_rows($rs) != 1) {
       return false;
     }
 
-    $cat_id = (int) mysql_result($rs, 0);
+    $cat_id = (int)mysql_result($rs, 0);
 
     // first get the catalogue ID
     $rs = mysql_query("SELECT COUNT(*) FROM trans_unit WHERE cat_id = {$cat_id}", $this->db);
 
-    $count = (int) mysql_result($rs, 0);
+    $count = (int)mysql_result($rs, 0);
 
-    return array($cat_id, $variant, $count);
+    return [$cat_id, $variant, $count];
   }
 
   /**
    * Updates the catalogue last modified time.
    *
-   * @return boolean true if updated, false otherwise.
+   * @return bool true if updated, false otherwise.
    */
   protected function updateCatalogueTime($cat_id, $variant)
   {
@@ -320,9 +310,8 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
 
     $result = mysql_query("UPDATE catalogue SET date_modified = {$time} WHERE cat_id = {$cat_id}", $this->db);
 
-    if ($this->cache)
-    {
-      $this->cache->remove($variant.':'.$this->culture);
+    if ($this->cache) {
+      $this->cache->remove($variant . ':' . $this->culture);
     }
 
     return $result;
@@ -334,38 +323,33 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * strings to the translation source via the <b>append()</b> method.
    *
    * @param string $catalogue the catalogue to add to
-   * @return boolean true if saved successfuly, false otherwise.
+   *
+   * @return bool true if saved successfuly, false otherwise.
    */
-  function save($catalogue = 'messages')
+  public function save($catalogue = 'messages')
   {
     $messages = $this->untranslated;
 
-    if (count($messages) <= 0)
-    {
+    if (count($messages) <= 0) {
       return false;
     }
 
     $details = $this->getCatalogueDetails($catalogue);
 
-    if ($details)
-    {
-      list($cat_id, $variant, $count) = $details;
-    }
-    else
-    {
+    if ($details) {
+      [$cat_id, $variant, $count] = $details;
+    } else {
       return false;
     }
 
-    if ($cat_id <= 0)
-    {
+    if ($cat_id <= 0) {
       return false;
     }
     $inserted = 0;
 
     $time = time();
 
-    foreach ($messages as $message)
-    {
+    foreach ($messages as $message) {
       $count++;
       $inserted++;
       $message = mysql_real_escape_string($message, $this->db);
@@ -374,8 +358,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
         ({$cat_id}, {$count},'{$message}',$time)";
       mysql_query($statement, $this->db);
     }
-    if ($inserted > 0)
-    {
+    if ($inserted > 0) {
       $this->updateCatalogueTime($cat_id, $variant);
     }
 
@@ -387,17 +370,15 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    *
    * @param string $message   the source message to delete.
    * @param string $catalogue the catalogue to delete from.
-   * @return boolean true if deleted, false otherwise.
+   *
+   * @return bool true if deleted, false otherwise.
    */
-  function delete($message, $catalogue = 'messages')
+  public function delete($message, $catalogue = 'messages')
   {
     $details = $this->getCatalogueDetails($catalogue);
-    if ($details)
-    {
-      list($cat_id, $variant, $count) = $details;
-    }
-    else
-    {
+    if ($details) {
+      [$cat_id, $variant, $count] = $details;
+    } else {
       return false;
     }
 
@@ -408,8 +389,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
 
     mysql_query($statement, $this->db);
 
-    if (mysql_affected_rows($this->db) == 1)
-    {
+    if (mysql_affected_rows($this->db) == 1) {
       $deleted = $this->updateCatalogueTime($cat_id, $variant);
     }
 
@@ -423,17 +403,15 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    * @param string $target    the new translation string.
    * @param string $comments  comments
    * @param string $catalogue the catalogue of the translation.
-   * @return boolean true if translation was updated, false otherwise.
+   *
+   * @return bool true if translation was updated, false otherwise.
    */
-  function update($text, $target, $comments, $catalogue = 'messages')
+  public function update($text, $target, $comments, $catalogue = 'messages')
   {
     $details = $this->getCatalogueDetails($catalogue);
-    if ($details)
-    {
-      list($cat_id, $variant, $count) = $details;
-    }
-    else
-    {
+    if ($details) {
+      [$cat_id, $variant, $count] = $details;
+    } else {
       return false;
     }
 
@@ -448,8 +426,7 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
     $updated = false;
 
     mysql_query($statement, $this->db);
-    if (mysql_affected_rows($this->db) == 1)
-    {
+    if (mysql_affected_rows($this->db) == 1) {
       $updated = $this->updateCatalogueTime($cat_id, $variant);
     }
 
@@ -461,20 +438,20 @@ class sfMessageSource_MySQL extends sfMessageSource_Database
    *
    * @return array list of catalogues
    */
-  function catalogues()
-  {
-    $statement = 'SELECT name FROM catalogue ORDER BY name';
-    $rs = mysql_query($statement, $this->db);
-    $result = array();
-    while($row = mysql_fetch_array($rs, MYSQL_NUM))
-    {
-      $details = explode('.', $row[0]);
-      if (!isset($details[1]))
-      {
-        $details[1] = null;
-      }
+publicfunction catalogues()
+{
+$statement = 'SELECT name FROM catalogue ORDER BY name';
+$rs = mysql_query($statement, $this->db);
+$result = array();
+while ($row = mysql_fetch_array($rs, MYSQL_NUM))
+{
+$details = explode('.', $row[0]);
+if (!isset($details[1]))
+{
+$details[1] = null;
+}
 
-      $result[] = $details;
+$result[] = $details;
     }
 
     return $result;

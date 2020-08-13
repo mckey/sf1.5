@@ -56,8 +56,8 @@
  *   $formatter = new sfMessageFormat($source);
  * </code>
  *
- * @author Xiang Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @version v1.0, last update on Fri Dec 24 19:55:49 EST 2004
+ * @author     Xiang Wei Zhuo <weizhuo[at]gmail[dot]com>
+ * @version    v1.0, last update on Fri Dec 24 19:55:49 EST 2004
  * @package    symfony
  * @subpackage i18n
  */
@@ -65,29 +65,33 @@ abstract class sfMessageSource implements sfIMessageSource
 {
   /**
    * The culture name for this message source.
+   *
    * @var string
    */
-  protected $culture;
+  protected string $culture;
 
   /**
    * Array of translation messages.
+   *
    * @var array
    */
-  protected $messages = array();
+  protected array $messages = [];
 
   /**
    * The source of message translations.
+   *
    * @var string
    */
-  protected $source;
+  protected string $source;
 
   /**
    * The translation cache.
-   * @var sfMessageCache
+   *
+   * @var sfCache
    */
-  protected $cache;
+  protected sfCache $cache;
 
-  protected $untranslated = array();
+  protected array $untranslated = [];
 
   /**
    * Private constructor. sfMessageSource must be initialized using
@@ -110,33 +114,31 @@ abstract class sfMessageSource implements sfIMessageSource
    * Custom message source are possible by supplying the a filename parameter
    * in the factory method.
    *
-   * @param string $type      the message source type.
-   * @param string $source    the location of the resource.
-   * @param string $filename  the filename of the custom message source.
-   * @param string $catalog   message source catalog name.
-   * @return sfMessageSource a new message source of the specified type.
+   * @param string $type     the message source type.
+   * @param string $source   the location of the resource.
+   * @param string $filename the filename of the custom message source.
+   * @param string $catalog  message source catalog name.
+   *
    * @throws sfException
+   * @return sfMessageSource a new message source of the specified type.
    */
-  static function factory($type, $source = '.', $filename = '', $catalog = 'messages')
+  public static function factory($type, $source = '.', $filename = '', $catalog = 'messages')
   {
-    if ($filename)
-    {
-      if (!is_file($filename))
-      {
+    if ($filename) {
+      if (!is_file($filename)) {
         throw new sfException(sprintf("File %s not found.", $filename));
       }
 
       include_once($filename);
     }
 
-    if (('SQLite' == $type) && version_compare(PHP_VERSION, '5.3', '>'))
-    {
+    if (('SQLite' == $type) && version_compare(PHP_VERSION, '5.3', '>')) {
       $type .= '3';
     }
 
-    $class = 'sfMessageSource_'.$type;
-    if (!class_exists($class))
-    {
+    $class = 'sfMessageSource_' . $type;
+
+    if (!class_exists($class)) {
       throw new sfException(sprintf('Unable to find type "%s".', $type));
     }
 
@@ -156,36 +158,32 @@ abstract class sfMessageSource implements sfIMessageSource
    *  # [6] Store the messages to cache.
    *  # [7] Continue with the foreach loop, e.g. goto [2].
    *
-   * @param  string  $catalogue a catalogue to load
-   * @return boolean always true
+   * @param string $catalogue a catalogue to load
+   *
+   * @return bool always true
    * @see    read()
    */
-  function load($catalogue = 'messages')
+  public function load($catalogue = 'messages')
   {
     $variants = $this->getCatalogueList($catalogue);
 
-    $this->messages = array();
+    $this->messages = [];
 
-    foreach ($variants as $variant)
-    {
+    foreach ($variants as $variant) {
       $source = $this->getSource($variant);
 
-      if ($this->isValidSource($source) == false)
-      {
+      if ($this->isValidSource($source) == false) {
         continue;
       }
 
       $loadData = true;
 
-      if ($this->cache)
-      {
+      if ($this->cache) {
         $lastModified = $this->getLastModified($source);
-        if ($lastModified >= 0 && $lastModified < $this->cache->getLastModified($variant.':'.$this->culture))
-        {
-          $data = unserialize($this->cache->get($variant.':'.$this->culture));
+        if ($lastModified >= 0 && $lastModified < $this->cache->getLastModified($variant . ':' . $this->culture)) {
+          $data = unserialize($this->cache->get($variant . ':' . $this->culture));
 
-          if (is_array($data))
-          {
+          if (is_array($data)) {
             $this->messages[$variant] = $data;
             $loadData = false;
           }
@@ -194,15 +192,12 @@ abstract class sfMessageSource implements sfIMessageSource
         }
       }
 
-      if ($loadData)
-      {
+      if ($loadData) {
         $data = &$this->loadData($source);
-        if (is_array($data))
-        {
+        if (is_array($data)) {
           $this->messages[$variant] = $data;
-          if ($this->cache)
-          {
-            $this->cache->set($variant.':'.$this->culture, serialize($data));
+          if ($this->cache) {
+            $this->cache->set($variant . ':' . $this->culture, serialize($data));
           }
         }
 
@@ -226,7 +221,7 @@ abstract class sfMessageSource implements sfIMessageSource
   /**
    * Gets the cache handler for this source.
    *
-   * @return sfMessageCache cache handler
+   * @return sfCache cache handler
    */
   public function getCache()
   {
@@ -251,8 +246,7 @@ abstract class sfMessageSource implements sfIMessageSource
    */
   public function append($message)
   {
-    if (!in_array($message, $this->untranslated))
-    {
+    if (!in_array($message, $this->untranslated)) {
       $this->untranslated[] = $message;
     }
   }
@@ -281,6 +275,7 @@ abstract class sfMessageSource implements sfIMessageSource
    * Gets the last modified unix-time for this particular catalogue+variant.
    *
    * @param string $source catalogue+variant
+   *
    * @return int last modified in unix-time format.
    */
   protected function getLastModified($source)
@@ -293,20 +288,24 @@ abstract class sfMessageSource implements sfIMessageSource
    * This methods needs to implemented by subclasses.
    *
    * @param string $variant catalogue+variant.
+   *
    * @return array of translation messages.
    */
   public function &loadData($variant)
   {
-    return array();
+    $arr = [];
+
+    return $arr;
   }
 
   /**
    * Gets the source, this could be a filename or database ID.
    *
    * @param string $variant catalogue+variant
+   *
    * @return string the resource key
    */
-  public function getSource($variant)
+  public function getSource(string $variant)
   {
     return $variant;
   }
@@ -315,9 +314,10 @@ abstract class sfMessageSource implements sfIMessageSource
    * Determines if the source is valid.
    *
    * @param string $source catalogue+variant
-   * @return boolean true if valid, false otherwise.
+   *
+   * @return bool true if valid, false otherwise.
    */
-  public function isValidSource($source)
+  public function isValidSource(string $source)
   {
     return false;
   }
@@ -327,10 +327,11 @@ abstract class sfMessageSource implements sfIMessageSource
    * This method must be implemented by subclasses.
    *
    * @param string $catalogue catalogue name
+   *
    * @return array list of all variants for this catalogue.
    */
-  public function getCatalogueList($catalogue)
+  public function getCatalogueList(string $catalogue)
   {
-    return array();
+    return [];
   }
 }

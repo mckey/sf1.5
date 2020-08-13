@@ -57,108 +57,79 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 {
   /**
    * The data source string, full DSN to the database.
+   *
    * @var string
    */
-  protected $source;
+  protected string $source;
 
   /**
    * Catalog name
+   *
    * @var string
    */
-  protected $catalog;
+  protected string $catalog;
 
   /**
    * The DSN array property, parsed by PEAR's DB DSN parser.
+   *
    * @var array
    */
-  protected $dsn;
+  protected array $dsn;
 
   /**
-   * A resource link to the database
-   * @var string
+   * A resource link to the Doctrine
+   *
+   * @var Doctrine_Connection|null
    */
-  protected $db;
+  protected ?Doctrine_Connection $db;
 
   /**
    * Constructor.
    * Creates a new message source using MySQLi.
    *
-   * @param mixed $source MySQL data source, in PEAR's DB DSN format.
-   * @param string $catalog catalog name.
+   * @param sfDoctrineDatabase|string $source  MySQL data source, in PEAR's DB DSN format.
+   * @param string                    $catalog catalog name.
+   *
    * @throws null
    * @see MessageSource::factory();
    */
-  function __construct($source, $catalog = 'messages')
+  public function __construct($source, string $catalog = 'messages')
   {
-    if (is_subclass_of($source, 'sfDatabase')) {
+    if (is_object($source)) {
       $this->db = $source->getDoctrineConnection();
-    } elseif (is_string($source)) {
-      $this->source = (string)$source;
-      $this->dsn = $this->parseDSN($this->source);
-      $this->db = $this->connect();
+      $this->source = $this->db->getOption('dsn');
+      $this->connect();
+    } else {
+      $this->source = $source;
     }
 
-    $this->catalog = (string)$catalog;
+    $this->catalog = $catalog;
   }
 
   /**
    * Destructor, closes the database connection.
+   *
+   * @throws Doctrine_Connection_Exception
    */
-  function __destruct()
+  public function __destruct()
   {
-    @mysqli_close($this->db);
+    $this->db->close();
   }
 
   /**
    * Connects to the MySQLi datasource
    *
-   * @return mysqli MySQLi connection.
-   * @throws sfException, connection and database errors.
+   * @throws Doctrine_Connection_Exception
    */
   protected function connect()
   {
-    $dsninfo = $this->dsn;
-
-    if (isset($dsninfo['protocol']) && $dsninfo['protocol'] == 'unix') {
-      $dbhost = ':' . $dsninfo['socket'];
-    } else {
-      $dbhost = $dsninfo['hostspec'] ?: 'localhost';
-      if (!empty($dsninfo['port'])) {
-        $dbhost .= ':' . $dsninfo['port'];
-      }
-    }
-    $user = $dsninfo['username'];
-    $pw = $dsninfo['password'];
-
-    if ($dbhost && $user && $pw) {
-      $conn = new mysqli($dbhost, $user, $pw);
-    } elseif ($dbhost && $user) {
-      $conn = new mysqli($dbhost, $user);
-    } elseif ($dbhost) {
-      $conn = new mysqli($dbhost);
-    } else {
-      $conn = new mysqli();
-    }
-
-    if (mysqli_connect_errno()) {
-      throw new sfException(sprintf('Error in connecting to %s.', mysqli_connect_errno()));
-    }
-
-    if ($dsninfo['database']) {
-      if (!mysqli_select_db($conn, $dsninfo['database'])) {
-        throw new sfException(sprintf('Error in connecting database, dsn: %s.', $dsninfo));
-      }
-    } else {
-      throw new sfException('Please provide a database for message translation.');
-    }
-
-    return $conn;
+    $this->db->connect();
   }
 
   /**
    * Gets the database connection.
    *
-   * @return mysqli database connection.
+   * @return Doctrine_Connection database connection.
    */
   public function connection()
   {
@@ -169,6 +140,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    * Gets an array of messages for a particular catalogue and cultural variant.
    *
    * @param string $variant the catalogue name + variant
+   *
    * @return array translation messages.
    */
   public function &loadData($variant)
@@ -178,17 +150,16 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
         FROM trans_unit t, catalogue c
         WHERE c.id =  t.catalogue_id
           AND c.name = '{$variant}'
-        ORDER BY id ASC";
+        ORDER BY id";
 
     $rs = $this->db->execute($statement);
 
     $result = [];
 
-    while ($row = $rs->fetch(Doctrine_Core::FETCH_NUM)) {
-      $source = $row[1];
-      $result[$source][] = $row[2]; //target
-      $result[$source][] = $row[0]; //id
-      $result[$source][] = $row[3]; //comments
+    while ([$id, $source, $target, $comments] = $rs->fetch(Doctrine_Core::FETCH_NUM)) {
+      $result[$source][] = $target;
+      $result[$source][] = $id;
+      $result[$source][] = $comments;
     }
 
     return $result;
@@ -199,12 +170,15 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    * We need to query the database to get the date_modified.
    *
    * @param string $source catalogue+variant
+   *
    * @return int last modified in unix-time format.
    */
   protected function getLastModified($source)
   {
     $statement = $this->db->execute("SELECT updated_at FROM catalogue WHERE name = '{$source}'");
+
     $row = $statement->fetch(Doctrine_Core::FETCH_NUM);
+
     return !empty($row[0]) ? (int)$row[0] : 0;
   }
 
@@ -212,7 +186,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    * Checks if a particular catalogue+variant exists in the database.
    *
    * @param string $variant catalogue+variant
-   * @return boolean true if the catalogue+variant is in the database, false otherwise.
+   *
+   * @return bool true if the catalogue+variant is in the database, false otherwise.
    */
   public function isValidSource($variant)
   {
@@ -226,13 +201,15 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     }
 
     $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$variant}'");
+
     if ($rs->rowCount() == 0) {
       $time = date('Y-m-d h:i:s');
       $statement = "INSERT INTO catalogue
-        (name,source_lang,target_lang,created_at,created_by) VALUES
-        ('{$variant}', 'en','{$this->culture}','{$time}', 1)";
+        (name,source_lang,target_lang,created_at,created_by,updated_at,updated_by) VALUES
+        ('{$variant}','en','{$this->culture}','{$time}',1,'{$time}',1)";
       $rs = $this->db->execute($statement);
     }
+
     return $rs->rowCount() == 1;
   }
 
@@ -240,6 +217,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    * Retrieves catalogue details, array($cat_id, $variant, $count).
    *
    * @param string $catalogue catalogue
+   *
    * @return array catalogue details, array($cat_id, $variant, $count).
    */
   protected function getCatalogueDetails($catalogue = 'messages')
@@ -266,15 +244,16 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   /**
    * Updates the catalogue last modified time.
    *
-   * @param string $cat_id catalogue id
+   * @param string $cat_id  catalogue id
    * @param string $variant culture
-   * @return boolean true if updated, false otherwise.
+   *
+   * @return bool true if updated, false otherwise.
    */
   protected function updateCatalogueTime($cat_id, $variant)
   {
     $time = date('Y-m-d h:i:s');
 
-    $result = $this->db->execute("UPDATE catalogue SET updated_at = '{$time}' WHERE id = {$cat_id}");
+    $result = $this->db->exec("UPDATE catalogue SET updated_at = '{$time}' WHERE id = {$cat_id}");
 
     if ($this->cache) {
       $this->cache->remove($variant . ':' . $this->culture);
@@ -289,9 +268,10 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    * strings to the translation source via the <b>append()</b> method.
    *
    * @param string $catalogue the catalogue to add to
-   * @return boolean true if saved successfully, false otherwise.
+   *
+   * @return bool true if saved successfully, false otherwise.
    */
-  function save($catalogue = 'messages')
+  public function save($catalogue = 'messages')
   {
     $messages = $this->untranslated;
 
@@ -319,11 +299,13 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       $count++;
       $inserted++;
       $message = $formatter->quote($message, 'string');
+
       if (!empty($message)) {
-        $statement = "INSERT INTO trans_unit
-        (catalogue_id,msg,source,comments,created_at,created_by) VALUES
-        ({$cat_id}, {$count}, {$message},'save','{$time}', 1)";
-        $this->db->execute($statement);
+        $this->db->exec(
+          "INSERT INTO trans_unit
+                       (catalogue_id,msg,source,target,comments,created_at,created_by,updated_at,updated_by)
+                VALUES ({$cat_id}, {$count},{$message},'','save','{$time}',1,'{$time}',1)"
+        );
       }
     }
 
@@ -337,14 +319,15 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   /**
    * Adds the translation.
    *
-   * @param string $source the source string.
-   * @param string $target the new translation string.
+   * @param string $source    the source string.
+   * @param string $target    the new translation string.
    * @param string $comments
    * @param string $catalogue the catalogue of the translation.
-   * @param int $user_id
-   * @return boolean true if translation was added, false otherwise.
+   * @param int    $user_id
+   *
+   * @return bool true if translation was added, false otherwise.
    */
-  function add($source, $target, $comments = '', $catalogue = 'messages', $user_id = 1)
+  public function add($source, $target, $comments = '', $catalogue = 'messages', $user_id = 1)
   {
     if (empty($source)) {
       return false;
@@ -370,10 +353,11 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $source = $formatter->quote($source, 'string');
     $target = $formatter->quote($target, 'string');
     $comments = $formatter->quote($comments . ' add', 'string');
-    $statement = "INSERT INTO trans_unit
-        (catalogue_id,msg,source,target,comments,created_at,created_by) VALUES
-        ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id})";
-    $result = $this->db->execute($statement);
+    $result = $this->db->exec(
+      "INSERT INTO trans_unit
+        (catalogue_id,msg,source,target,comments,created_at,created_by,updated_at,updated_by) VALUES
+        ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id},'{$time}',{$user_id})"
+    );
 
     if (!empty($result)) {
       $this->updateCatalogueTime($cat_id, $variant);
@@ -385,23 +369,25 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   /**
    * Deletes a particular message from the specified catalogue.
    *
-   * @param string $message the source message to delete.
+   * @param string $message   the source message to delete.
    * @param string $catalogue the catalogue to delete from.
-   * @return boolean true if deleted, false otherwise.
+   *
+   * @return bool true if deleted, false otherwise.
    */
-  function delete($message, $catalogue = 'messages')
+  public function delete($message, $catalogue = 'messages')
   {
     $details = $this->getCatalogueDetails($catalogue);
     if (count($details) == 3) {
-      [$cat_id, $variant, $count] = $details;
+      [$cat_id, $variant,] = $details;
     } else {
       return false;
     }
 
-    $statement = "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND BINARY source = '{$message}'";
     $deleted = false;
 
-    $rs = $this->db->execute($statement);
+    $rs = $this->db->execute(
+      "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND BINARY source = '{$message}'"
+    );
 
     if ($rs->rowCount() == 1) {
       $deleted = $this->updateCatalogueTime($cat_id, $variant);
@@ -413,13 +399,14 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   /**
    * Updates the translation.
    *
-   * @param string $text the source string.
-   * @param string $target the new translation string.
-   * @param string $comments comments
+   * @param string $text      the source string.
+   * @param string $target    the new translation string.
+   * @param string $comments  comments
    * @param string $catalogue the catalogue of the translation.
-   * @return boolean true if translation was updated, false otherwise.
+   *
+   * @return bool true if translation was updated, false otherwise.
    */
-  function update($text, $target, $comments = '', $catalogue = 'messages')
+  public function update($text, $target, $comments = '', $catalogue = 'messages')
   {
     if (empty($text) || empty($target)) {
       return false;
@@ -428,7 +415,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $details = $this->getCatalogueDetails($catalogue);
 
     if (count($details) == 3) {
-      [$cat_id, $variant, $count] = $details;
+      [$cat_id, $variant,] = $details;
     } else {
       return false;
     }
@@ -441,12 +428,12 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $time = date('Y-m-d h:i:s');
 
-    $statement = "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' " .
-                 "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}";
-
     $updated = false;
 
-    $rs = $this->db->execute($statement);
+    $rs = $this->db->execute(
+      "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' " .
+      "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}"
+    );
 
     if ($rs->rowCount() == 1) {
       $updated = $this->updateCatalogueTime($cat_id, $variant);
@@ -460,20 +447,20 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    *
    * @return array list of catalogues
    */
-  function catalogues()
+  public function catalogues()
   {
-    $statement = 'SELECT name FROM catalogue ORDER BY name';
-    $rs = $this->db->execute($statement);
-    $result = [];
+    $catalogues = [];
+
+    $rs = $this->db->execute('SELECT name FROM catalogue ORDER BY name');
+
     while ($row = $rs->fetch(Doctrine_Core::FETCH_NUM)) {
       $details = explode('.', $row[0]);
-      if (!isset($details[1])) {
-        $details[1] = null;
-      }
 
-      $result[] = $details;
+      $details[1] ??= null;
+
+      $catalogues[] = $details;
     }
 
-    return $result;
+    return $catalogues;
   }
 }
