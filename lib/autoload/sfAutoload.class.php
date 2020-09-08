@@ -21,13 +21,13 @@
  */
 class sfAutoload
 {
-  static protected
+  protected static
     $freshCache = false,
-    $instance   = null;
+    $instance = null;
 
   protected
-    $overriden = array(),
-    $classes   = array();
+    $overriden = [],
+    $classes = [];
 
   protected function __construct()
   {
@@ -38,10 +38,9 @@ class sfAutoload
    *
    * @return sfAutoload A sfAutoload implementation instance.
    */
-  static public function getInstance()
+  public static function getInstance()
   {
-    if (!isset(self::$instance))
-    {
+    if (!isset(self::$instance)) {
       self::$instance = new sfAutoload();
     }
 
@@ -51,17 +50,18 @@ class sfAutoload
   /**
    * Register sfAutoload in spl autoloader.
    *
+   * @throws sfException
    * @return void
    *
-   * @throws sfException
    */
-  static public function register()
+  public static function register()
   {
     ini_set('unserialize_callback_func', 'spl_autoload_call');
 
-    if (false === spl_autoload_register(array(self::getInstance(), 'autoload')))
-    {
-      throw new sfException(sprintf('Unable to register %s::autoload as an autoloading method.', get_class(self::getInstance())));
+    if (false === spl_autoload_register([self::getInstance(), 'autoload'])) {
+      throw new sfException(
+        sprintf('Unable to register %s::autoload as an autoloading method.', get_class(self::getInstance()))
+      );
     }
   }
 
@@ -70,9 +70,9 @@ class sfAutoload
    *
    * @return void
    */
-  static public function unregister()
+  public static function unregister()
   {
-    spl_autoload_unregister(array(self::getInstance(), 'autoload'));
+    spl_autoload_unregister([self::getInstance(), 'autoload']);
   }
 
   /**
@@ -107,51 +107,42 @@ class sfAutoload
   /**
    * Reloads the autoloader.
    *
-   * @param  boolean $force Whether to force a reload
+   * @param bool $force Whether to force a reload
    *
-   * @return boolean True if the reload was successful, otherwise false
+   * @return bool True if the reload was successful, otherwise false
    */
   public function reloadClasses($force = false)
   {
     // only (re)load the autoloading cache once per request
-    if (self::$freshCache && !$force)
-    {
+    if (self::$freshCache && !$force) {
       return false;
     }
 
     $configuration = sfProjectConfiguration::getActive();
-    if (!$configuration || !$configuration instanceof sfApplicationConfiguration)
-    {
+    if (!$configuration || !$configuration instanceof sfApplicationConfiguration) {
       return false;
     }
 
     self::$freshCache = true;
-    if (is_file($configuration->getConfigCache()->getCacheName('config/autoload.yml')))
-    {
+    if (is_file($configuration->getConfigCache()->getCacheName('config/autoload.yml'))) {
       self::$freshCache = false;
-      if ($force)
-      {
-        if (file_exists($configuration->getConfigCache()->getCacheName('config/autoload.yml')))
-        {
-          unlink($configuration->getConfigCache()->getCacheName('config/autoload.yml'));
+      if ($force) {
+        if (file_exists($configuration->getConfigCache()->getCacheName('config/autoload.yml'))) {
+          @unlink($configuration->getConfigCache()->getCacheName('config/autoload.yml'));
         }
       }
     }
 
     $file = $configuration->getConfigCache()->checkConfig('config/autoload.yml');
 
-    if ($force && defined('HHVM_VERSION'))
-    {
+    if ($force && defined('HHVM_VERSION')) {
       // workaround for https://github.com/facebook/hhvm/issues/1447
       $this->classes = eval(str_replace('<?php', '', file_get_contents($file)));
-    }
-    else
-    {
+    } else {
       $this->classes = include $file;
     }
 
-    foreach ($this->overriden as $class => $path)
-    {
+    foreach ($this->overriden as $class => $path) {
       $this->classes[$class] = $path;
     }
 
@@ -161,15 +152,14 @@ class sfAutoload
   /**
    * Handles autoloading of classes that have been specified in autoload.yml.
    *
-   * @param  string  $class  A class name.
+   * @param string $class A class name.
    *
-   * @return boolean Returns true if the class has been loaded
+   * @return bool Returns true if the class has been loaded
    */
   public function autoload($class)
   {
     // load the list of autoload classes
-    if (!$this->classes)
-    {
+    if (!$this->classes) {
       self::reloadClasses();
     }
 
@@ -179,33 +169,28 @@ class sfAutoload
   /**
    * Tries to load a class that has been specified in autoload.yml.
    *
-   * @param  string  $class  A class name.
+   * @param string $class A class name.
    *
-   * @return boolean Returns true if the class has been loaded
+   * @return bool Returns true if the class has been loaded
    */
   public function loadClass($class)
   {
     $class = strtolower($class);
 
     // class already exists
-    if (class_exists($class, false) || interface_exists($class, false) || (function_exists('trait_exists') && trait_exists($class, false)))
-    {
+    if (class_exists($class, false) || interface_exists($class, false) || (function_exists(
+                                                                             'trait_exists'
+                                                                           ) && trait_exists($class, false))) {
       return true;
     }
 
     // we have a class path, let's include it
-    if (isset($this->classes[$class]))
-    {
-      try
-      {
+    if (isset($this->classes[$class])) {
+      try {
         require $this->classes[$class];
-      }
-      catch (sfException $e)
-      {
+      } catch (sfException $e) {
         $e->printStackTrace();
-      }
-      catch (Exception $e)
-      {
+      } catch (Exception $e) {
         sfException::createFromException($e)->printStackTrace();
       }
 
@@ -218,19 +203,13 @@ class sfAutoload
       &&
       ($module = sfContext::getInstance()->getModuleName())
       &&
-      isset($this->classes[$module.'/'.$class])
-    )
-    {
-      try
-      {
-        require $this->classes[$module.'/'.$class];
-      }
-      catch (sfException $e)
-      {
+      isset($this->classes[$module . '/' . $class])
+    ) {
+      try {
+        require $this->classes[$module . '/' . $class];
+      } catch (sfException $e) {
         $e->printStackTrace();
-      }
-      catch (Exception $e)
-      {
+      } catch (Exception $e) {
         sfException::createFromException($e)->printStackTrace();
       }
 
