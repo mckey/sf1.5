@@ -12,7 +12,8 @@
     "ext-calendar": "*",
     "ext-mbstring": "*",
     "ext-redis": "*",
-    "ext-sockets": "*"
+    "ext-sockets": "*",
+    "ext-intl": "*"
   },
   "require-dev": {
     "psr/log": "*"
