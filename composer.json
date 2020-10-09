@@ -13,7 +13,8 @@
     "ext-mbstring": "*",
     "ext-redis": "*",
     "ext-sockets": "*",
-    "ext-intl": "*"
+    "ext-intl": "*",
+    "ext-zip": "*"
   },
   "require-dev": {
     "psr/log": "*"
