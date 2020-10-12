@@ -14,7 +14,10 @@
     "ext-redis": "*",
     "ext-sockets": "*",
     "ext-intl": "*",
-    "ext-zip": "*"
+    "ext-zip": "*",
+    "ext-simplexml": "*",
+    "ext-dom": "*",
+    "ext-xml": "*"
   },
   "require-dev": {
     "psr/log": "*"
