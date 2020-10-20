@@ -17,7 +17,9 @@
     "ext-zip": "*",
     "ext-simplexml": "*",
     "ext-dom": "*",
-    "ext-xml": "*"
+    "ext-xml": "*",
+    "ext-memcache": "*",
+    "ext-memcached": "*"
   },
   "require-dev": {
     "psr/log": "*"
