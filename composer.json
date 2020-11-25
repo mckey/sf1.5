@@ -19,7 +19,8 @@
     "ext-dom": "*",
     "ext-xml": "*",
     "ext-memcache": "*",
-    "ext-memcached": "*"
+    "ext-memcached": "*",
+    "ext-yaml": "*"
   },
   "require-dev": {
     "psr/log": "*"
