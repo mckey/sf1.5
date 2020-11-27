@@ -1448,6 +1448,7 @@ class Doctrine_Query extends Doctrine_Query_Abstract implements Countable
                 // Remove identifier quoting if it exists
                 $e = $this->_tokenizer->bracketExplode($part, ' ');
                 foreach ($e as $f) {
+                    $f = intval($f);
                     if ($f == 0 || $f % 2 == 0) {
                         $partOriginal = str_replace(',', '', trim($f));
                         $callback     = /**
