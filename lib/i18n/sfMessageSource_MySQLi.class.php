@@ -192,11 +192,13 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   public function isValidSource($variant)
   {
     $variant_array = explode('.', $variant);
-    $variant_culture = isset($variant_array[1]) ? $variant_array[1] : $this->culture;
+    $variant_culture = $variant_array[1] ?? $this->culture;
 
-    if (in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
-        !in_array($variant_culture, ['ru', 'ua', 'is', 'cn']) ||
-        !in_array($this->culture, ['ru', 'ua', 'is', 'cn'])) {
+    if (
+      in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
+      !in_array($variant_culture, ['ru', 'ua', 'is', 'da', 'sv', 'cn']) ||
+      !in_array($this->culture, ['ru', 'ua', 'is', 'da', 'sv', 'cn'])
+    ) {
       return false;
     }
 
