@@ -37,70 +37,69 @@ class Doctrine_Migration
     /**
      * @var string
      */
-    protected $_migrationTableName = 'migration_version';
+    protected string $_migrationTableName = 'migration_version';
 
     /**
      * @var bool
      */
-    protected $_migrationTableCreated = false;
+    protected bool $_migrationTableCreated = false;
 
     /**
      * @var Doctrine_Connection
      */
-    protected $_connection;
+    protected Doctrine_Connection $_connection;
 
     /**
      * @var string
      */
-    protected $_migrationClassesDirectory = '';
+    protected string $_migrationClassesDirectory = '';
 
     /**
      * @var array
      */
-    protected $_migrationClasses = array();
+    protected array $_migrationClasses = [];
 
     /**
      * @var ReflectionClass
      */
-    protected $_reflectionClass;
+    protected ReflectionClass $_reflectionClass;
 
     /**
      * @var array
      */
-    protected $_errors = array();
+    protected array $_errors = [];
 
     /**
      * @var Doctrine_Migration_Process
      */
-    protected $_process;
+    protected Doctrine_Migration_Process $_process;
 
     /**
      * @var array
      */
-    protected static $_migrationClassesForDirectories = array();
+    protected static array $_migrationClassesForDirectories = [];
 
     /**
      * Specify the path to the directory with the migration classes.
      * The classes will be loaded and the migration table will be created if it
      * does not already exist
      *
-     * @param string $directory The path to your migrations directory
-     * @param mixed $connection The connection name or instance to use for this migration
+     * @param string|null $directory  The path to your migrations directory
+     * @param mixed       $connection The connection name or instance to use for this migration
+     *
+     * @throws ReflectionException
      * @return void
      */
-    public function __construct($directory = null, $connection = null)
+    public function __construct(?string $directory = null, $connection = null)
     {
         $this->_reflectionClass = new ReflectionClass('Doctrine_Migration_Base');
 
         if (is_null($connection)) {
             $this->_connection = Doctrine_Manager::connection();
+        } elseif (is_string($connection)) {
+            $this->_connection = Doctrine_Manager::getInstance()->getConnection($connection);
         } else {
-            if (is_string($connection)) {
-                $this->_connection = Doctrine_Manager::getInstance()
-                    ->getConnection($connection);
-            } else {
-                $this->_connection = $connection;
-            }
+            $this->_connection = $connection;
         }
 
         $this->_process = new Doctrine_Migration_Process($this);
@@ -115,12 +114,14 @@ class Doctrine_Migration
     /**
      * @return Doctrine_Connection
      */
-    public function getConnection()
+    public function getConnection() : Doctrine_Connection
     {
         return $this->_connection;
     }
 
     /**
+     * @param Doctrine_Connection $conn
+     *
      * @return void
      */
     public function setConnection(Doctrine_Connection $conn)
@@ -133,7 +134,7 @@ class Doctrine_Migration
      *
      * @return string $migrationClassesDirectory
      */
-    public function getMigrationClassesDirectory()
+    public function getMigrationClassesDirectory() : string
     {
         return $this->_migrationClassesDirectory;
     }
@@ -143,7 +144,7 @@ class Doctrine_Migration
      *
      * @return string $migrationTableName
      */
-    public function getTableName()
+    public function getTableName() : string
     {
         return $this->_migrationTableName;
     }
@@ -152,28 +153,31 @@ class Doctrine_Migration
      * Set the table name for storing the version number for this migration instance
      *
      * @param string $tableName
+     *
      * @return void
      */
-    public function setTableName($tableName)
+    public function setTableName(string $tableName)
     {
-        $this->_migrationTableName = $this->_connection
-                ->formatter->getTableName($tableName);
+        $this->_migrationTableName = $this->_connection->formatter->getTableName($tableName);
     }
 
     /**
      * Load migration classes from the passed directory. Any file found with a .php
      * extension will be passed to the loadMigrationClass()
      *
-     * @param string $directory  Directory to load migration classes from
+     * @param string|null $directory Directory to load migration classes from
+     *
+     * @throws ReflectionException
      * @return void
      */
-    public function loadMigrationClassesFromDirectory($directory = null)
+    public function loadMigrationClassesFromDirectory(?string $directory = null)
     {
-        $directory = $directory ? $directory:$this->_migrationClassesDirectory;
+        $directory = $directory ?? $this->_migrationClassesDirectory;
 
-        $classesToLoad = array();
-        $classes       = get_declared_classes();
-        foreach ((array) $directory as $dir) {
+        $classesToLoad = [];
+        $classes = get_declared_classes();
+
+        foreach ((array)$directory as $dir) {
             $it = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($dir),
                 RecursiveIteratorIterator::LEAVES_ONLY
@@ -190,19 +194,21 @@ class Doctrine_Migration
                 if (isset($info['extension']) && $info['extension'] == 'php') {
                     require_once($file->getPathName());
 
-                    $array     = array_diff(get_declared_classes(), $classes);
+                    $array = array_diff(get_declared_classes(), $classes);
                     $className = end($array);
 
                     if ($className) {
-                        $e         = explode('_', $file->getFileName());
+                        $e = explode('_', $file->getFileName());
                         $timestamp = $e[0];
 
-                        $classesToLoad[$timestamp] = array('className' => $className, 'path' => $file->getPathName());
+                        $classesToLoad[$timestamp] = ['className' => $className, 'path' => $file->getPathName()];
                     }
                 }
             }
         }
+
         ksort($classesToLoad, SORT_NUMERIC);
+
         foreach ($classesToLoad as $class) {
             $this->loadMigrationClass($class['className'], $class['path']);
         }
@@ -213,16 +219,19 @@ class Doctrine_Migration
      * migration classes to execute. It must be a child of Doctrine_Migration in order
      * to be loaded.
      *
-     * @param string $name
-     * @param string $path
-     * @return false|null
+     * @param string      $name
+     * @param string|null $path
+     *
+     * @throws ReflectionException
+     * @return bool
      */
-    public function loadMigrationClass($name, $path = null)
+    public function loadMigrationClass(string $name, ?string $path = null) : bool
     {
         $class = new ReflectionClass($name);
 
         while ($class->isSubclassOf($this->_reflectionClass)) {
             $class = $class->getParentClass();
+
             if ($class === false) {
                 break;
             }
@@ -235,17 +244,19 @@ class Doctrine_Migration
         if (empty($this->_migrationClasses)) {
             $classMigrationNum = 1;
         } else {
-            $nums              = array_keys($this->_migrationClasses);
-            $num               = end($nums);
+            $nums = array_keys($this->_migrationClasses);
+            $num = end($nums);
             $classMigrationNum = $num + 1;
         }
 
         $this->_migrationClasses[$classMigrationNum] = $name;
 
         if ($path) {
-            $dir                                                             = dirname($path);
+            $dir = dirname($path);
             self::$_migrationClassesForDirectories[$dir][$classMigrationNum] = $name;
         }
+
+        return true;
     }
 
     /**
@@ -254,7 +265,7 @@ class Doctrine_Migration
      *
      * @return array $migrationClasses
      */
-    public function getMigrationClasses()
+    public function getMigrationClasses() : array
     {
         return $this->_migrationClasses;
     }
@@ -262,66 +273,67 @@ class Doctrine_Migration
     /**
      * Set the current version of the database
      *
-     * @param integer $number
+     * @param int $number
+     *
      * @return void
      */
-    public function setCurrentVersion($number)
+    public function setCurrentVersion(int $number)
     {
         if ($this->hasMigrated()) {
-            $this->_connection->exec('UPDATE ' . $this->_migrationTableName . " SET version = $number");
+            $this->_connection->exec("UPDATE {$this->_migrationTableName} SET version = {$number}");
         } else {
-            $this->_connection->exec('INSERT INTO ' . $this->_migrationTableName . " (version) VALUES ($number)");
+            $this->_connection->exec("INSERT INTO {$this->_migrationTableName} (version) VALUES ({$number})");
         }
     }
 
     /**
      * Get the current version of the database
      *
-     * @return integer $version
+     * @return int $version
      */
-    public function getCurrentVersion()
+    public function getCurrentVersion() : int
     {
         $this->_createMigrationTable();
 
-        $result = $this->_connection->fetchColumn('SELECT version FROM ' . $this->_migrationTableName);
+        $result = $this->_connection->fetchColumn("SELECT version FROM {$this->_migrationTableName}");
 
-        return isset($result[0]) ? $result[0]:0;
+        return $result[0] ?? 0;
     }
 
     /**
      * hReturns true/false for whether or not this database has been migrated in the past
      *
-     * @return boolean $migrated
+     * @return bool $migrated
      */
-    public function hasMigrated()
+    public function hasMigrated() : bool
     {
         $this->_createMigrationTable();
 
-        $result = $this->_connection->fetchColumn('SELECT version FROM ' . $this->_migrationTableName);
+        $result = $this->_connection->fetchColumn("SELECT version FROM {$this->_migrationTableName}");
 
-        return isset($result[0]) ? true:false;
+        return isset($result[0]);
     }
 
     /**
      * Gets the latest possible version from the loaded migration classes
      *
-     * @return integer $latestVersion
+     * @return int $latestVersion
      */
-    public function getLatestVersion()
+    public function getLatestVersion() : int
     {
         $versions = array_keys($this->_migrationClasses);
         rsort($versions);
 
-        return isset($versions[0]) ? $versions[0]:0;
+        return $versions[0] ?? 0;
     }
 
     /**
      * Get the next incremented version number based on the latest version number
      * using getLatestVersion()
      *
-     * @return integer $nextVersion
+     * @return int $nextVersion
      */
-    public function getNextVersion()
+    public function getNextVersion() : int
     {
         return $this->getLatestVersion() + 1;
     }
@@ -329,16 +341,16 @@ class Doctrine_Migration
     /**
      * Get the next incremented class version based on the loaded migration classes
      *
-     * @return integer $nextMigrationClassVersion
+     * @return int $nextMigrationClassVersion
      */
-    public function getNextMigrationClassVersion()
+    public function getNextMigrationClassVersion() : int
     {
         if (empty($this->_migrationClasses)) {
             return 1;
         } else {
             $nums = array_keys($this->_migrationClasses);
-            $num  = end($nums) + 1;
-            return $num;
+
+            return end($nums) + 1;
         }
     }
 
@@ -347,10 +359,11 @@ class Doctrine_Migration
      * migrate to. It will automatically know whether you are migrating up or down
      * based on the current version of the database.
      *
-     * @param  integer $to       Version to migrate to
-     * @param  boolean $dryRun   Whether or not to run the migrate process as a dry run
-     * @return integer|false $to       Version number migrated to
+     * @param int  $to     Version to migrate to
+     * @param bool $dryRun Whether or not to run the migrate process as a dry run
+     *
      * @throws Doctrine_Exception
+     * @return int|false $to       Version number migrated to
      */
     public function migrate($to = null, $dryRun = false)
     {
@@ -380,20 +393,21 @@ class Doctrine_Migration
             } else {
                 $this->_throwErrorsException();
             }
-        } else {
-            if ($dryRun) {
-                $this->_connection->rollback();
-                if ($this->hasErrors()) {
-                    return false;
-                } else {
-                    return $to;
-                }
+        } elseif ($dryRun) {
+            $this->_connection->rollback();
+
+            if ($this->hasErrors()) {
+                return false;
             } else {
-                $this->_connection->commit();
-                $this->setCurrentVersion($to);
                 return $to;
             }
+        } else {
+            $this->_connection->commit();
+            $this->setCurrentVersion($to);
+
+            return $to;
         }
+
         return false;
     }
 
@@ -401,10 +415,12 @@ class Doctrine_Migration
      * Run the migration process but rollback at the very end. Returns true or
      * false for whether or not the migration can be ran
      *
-     * @param  int  $to
-     * @return boolean|int $success
+     * @param int|null $to
+     *
+     * @throws Doctrine_Exception
+     * @return false|int $success
      */
-    public function migrateDryRun($to = null)
+    public function migrateDryRun(?int $to = null)
     {
         return $this->migrate($to, true);
     }
@@ -412,9 +428,9 @@ class Doctrine_Migration
     /**
      * Get the number of errors
      *
-     * @return integer $numErrors
+     * @return int $numErrors
      */
-    public function getNumErrors()
+    public function getNumErrors() : int
     {
         return count($this->_errors);
     }
@@ -424,7 +440,7 @@ class Doctrine_Migration
      *
      * @return array $errors
      */
-    public function getErrors()
+    public function getErrors() : array
     {
         return $this->_errors;
     }
@@ -436,13 +452,14 @@ class Doctrine_Migration
      */
     public function clearErrors()
     {
-        $this->_errors = array();
+        $this->_errors = [];
     }
 
     /**
      * Add an error to the stack. Excepts some type of Exception
      *
      * @param Exception $e
+     *
      * @return void
      */
     public function addError(Exception $e)
@@ -453,26 +470,27 @@ class Doctrine_Migration
     /**
      * Whether or not the migration instance has errors
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasErrors()
+    public function hasErrors() : bool
     {
-        return $this->getNumErrors() > 0 ? true:false;
+        return $this->getNumErrors() > 0;
     }
 
     /**
      * Get instance of migration class for number/version specified
      *
-     * @param integer $num
+     * @param int $num
      *
      * @throws Doctrine_Migration_Exception $e
      *
      * @return Doctrine_Migration_Base
      */
-    public function getMigrationClass($num)
+    public function getMigrationClass(int $num) : Doctrine_Migration_Base
     {
         if (isset($this->_migrationClasses[$num])) {
             $className = $this->_migrationClasses[$num];
+
             return new $className();
         }
 
@@ -482,22 +500,25 @@ class Doctrine_Migration
     /**
      * Throw an exception with all the errors trigged during the migration
      *
-     * @return void
      * @throws Doctrine_Migration_Exception $e
+     * @return void
      */
     protected function _throwErrorsException()
     {
-        $messages = array();
-        $num      = 0;
+        $messages = [];
+        $num = 0;
+
         foreach ($this->getErrors() as $error) {
             $num++;
-            $messages[] = ' Error #' . $num . ' - ' . $error->getMessage() . "\n" . $error->getTraceAsString() . "\n";
+            $messages[] = ' Error #' . $num . ' - ' .
+                          $error->getMessage() . PHP_EOL .
+                          $error->getTraceAsString() . PHP_EOL;
         }
 
-        $title   = $this->getNumErrors() . ' error(s) encountered during migration';
-        $message = $title . "\n";
-        $message .= str_repeat('=', strlen($title)) . "\n";
-        $message .= implode("\n", $messages);
+        $title = $this->getNumErrors() . ' error(s) encountered during migration';
+        $message = $title . PHP_EOL;
+        $message .= str_repeat('=', strlen($title)) . PHP_EOL;
+        $message .= implode(PHP_EOL, $messages);
 
         throw new Doctrine_Migration_Exception($message);
     }
@@ -505,11 +526,12 @@ class Doctrine_Migration
     /**
      * Do the actual migration process
      *
-     * @param  integer $to
-     * @return integer $to
+     * @param int $to
+     *
      * @throws Doctrine_Exception
+     * @return int $to
      */
-    protected function _doMigrate($to)
+    protected function _doMigrate(int $to) : int
     {
         $from = $this->getCurrentVersion();
 
@@ -517,7 +539,7 @@ class Doctrine_Migration
             throw new Doctrine_Migration_Exception('Already at version # ' . $to);
         }
 
-        $direction = $from > $to ? 'down':'up';
+        $direction = $from > $to ? 'down' : 'up';
 
         if ($direction === 'up') {
             for ($i = $from + 1; $i <= $to; $i++) {
@@ -537,10 +559,11 @@ class Doctrine_Migration
      * processes the changes
      *
      * @param string $direction Direction to go, 'up' or 'down'
-     * @param integer $num
+     * @param int    $num
+     *
      * @return void
      */
-    protected function _doMigrateStep($direction, $num)
+    protected function _doMigrateStep(string $direction, int $num)
     {
         try {
             $migration = $this->getMigrationClass($num);
@@ -556,12 +579,16 @@ class Doctrine_Migration
 
             if ($migration->getNumChanges() > 0) {
                 $changes = $migration->getChanges();
+
                 if ($direction == 'down' && method_exists($migration, 'migrate')) {
                     $changes = array_reverse($changes);
                 }
+
                 foreach ($changes as $value) {
-                    list($type, $change) = $value;
-                    $funcName            = 'process' . Doctrine_Inflector::classify($type);
+                    [$type, $change] = $value;
+
+                    $funcName = 'process' . Doctrine_Inflector::classify($type);
+
                     if (method_exists($this->_process, $funcName)) {
                         try {
                             $this->_process->$funcName($change);
@@ -569,7 +596,9 @@ class Doctrine_Migration
                             $this->addError($e);
                         }
                     } else {
-                        throw new Doctrine_Migration_Exception(sprintf('Invalid migration change type: %s', $type));
+                        throw new Doctrine_Migration_Exception(
+                            sprintf('Invalid migration change type: %s', $type)
+                        );
                     }
                 }
             }
@@ -585,10 +614,10 @@ class Doctrine_Migration
      * Create the migration table and return true. If it already exists it will
      * silence the exception and return false
      *
-     * @return boolean $created Whether or not the table was created. Exceptions
+     * @return bool $created Whether or not the table was created. Exceptions
      *                          are silenced when table already exists
      */
-    protected function _createMigrationTable()
+    protected function _createMigrationTable() : bool
     {
         if ($this->_migrationTableCreated) {
             return true;
@@ -597,7 +626,10 @@ class Doctrine_Migration
         $this->_migrationTableCreated = true;
 
         try {
-            $this->_connection->export->createTable($this->_migrationTableName, array('version' => array('type' => 'integer', 'size' => 11)));
+            $this->_connection->export->createTable(
+                $this->_migrationTableName,
+                ['version' => ['type' => 'integer', 'size' => 11]]
+            );
 
             return true;
         } catch (Exception $e) {
