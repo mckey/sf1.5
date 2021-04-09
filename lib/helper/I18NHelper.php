@@ -17,13 +17,13 @@
  */
 
 /**
- * @param string|null $text
- * @param array|null  $args
- * @param string      $catalogue
+ * @param string|array|null $text
+ * @param array|null        $args
+ * @param string            $catalogue
  *
  * @return string
  */
-function __(?string $text, ?array $args = [], string $catalogue = 'messages') : string
+function __($text, ?array $args = [], string $catalogue = 'messages') : string
 {
     if (sfConfig::get('sf_i18n')) {
         return sfContext::getInstance()->getI18N()->__($text, $args, $catalogue);
