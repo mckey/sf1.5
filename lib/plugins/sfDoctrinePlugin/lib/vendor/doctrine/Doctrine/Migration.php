@@ -158,7 +158,7 @@ class Doctrine_Migration
      */
     public function setTableName(string $tableName)
     {
-        $this->_migrationTableName = $this->_connection->formatter->getTableName($tableName);
+        $this->_migrationTableName = $this->getConnection()->formatter->getTableName($tableName);
     }
 
     /**
@@ -280,9 +280,9 @@ class Doctrine_Migration
     public function setCurrentVersion(int $number)
     {
         if ($this->hasMigrated()) {
-            $this->_connection->exec("UPDATE {$this->_migrationTableName} SET version = {$number}");
+            $this->getConnection()->execute("UPDATE {$this->getTableName()} SET version = {$number}");
         } else {
-            $this->_connection->exec("INSERT INTO {$this->_migrationTableName} (version) VALUES ({$number})");
+            $this->getConnection()->execute("INSERT INTO {$this->getTableName()} (version) VALUES ({$number})");
         }
     }
 
@@ -295,13 +295,13 @@ class Doctrine_Migration
     {
         $this->_createMigrationTable();
 
-        $result = $this->_connection->fetchColumn("SELECT version FROM {$this->_migrationTableName}");
+        $result = $this->getConnection()->fetchColumn("SELECT version FROM {$this->getTableName()}");
 
         return $result[0] ?? 0;
     }
 
     /**
-     * hReturns true/false for whether or not this database has been migrated in the past
+     * Returns true/false for whether or not this database has been migrated in the past
      *
      * @return bool $migrated
      */
@@ -309,7 +309,7 @@ class Doctrine_Migration
     {
         $this->_createMigrationTable();
 
-        $result = $this->_connection->fetchColumn("SELECT version FROM {$this->_migrationTableName}");
+        $result = $this->getConnection()->fetchColumn("SELECT version FROM {$this->getTableName()}");
 
         return isset($result[0]);
     }
@@ -371,7 +371,7 @@ class Doctrine_Migration
 
         $this->_createMigrationTable();
 
-        $this->_connection->beginTransaction();
+        $this->getConnection()->beginTransaction();
 
         try {
             // If nothing specified then lets assume we are migrating from
@@ -386,7 +386,11 @@ class Doctrine_Migration
         }
 
         if ($this->hasErrors()) {
-            $this->_connection->rollback();
+            try {
+                $this->getConnection()->rollback();
+            } catch (PDOException $e) {
+                $this->addError($e);
+            }
 
             if ($dryRun) {
                 return false;
@@ -394,7 +398,11 @@ class Doctrine_Migration
                 $this->_throwErrorsException();
             }
         } elseif ($dryRun) {
-            $this->_connection->rollback();
+            try {
+                $this->getConnection()->rollback();
+            } catch (PDOException $e) {
+                $this->addError($e);
+            }
 
             if ($this->hasErrors()) {
                 return false;
@@ -402,7 +410,12 @@ class Doctrine_Migration
                 return $to;
             }
         } else {
-            $this->_connection->commit();
+            try {
+                $this->getConnection()->commit();
+            } catch (PDOException $e) {
+                $this->addError($e);
+            }
+
             $this->setCurrentVersion($to);
 
             return $to;
@@ -626,8 +639,8 @@ class Doctrine_Migration
         $this->_migrationTableCreated = true;
 
         try {
-            $this->_connection->export->createTable(
-                $this->_migrationTableName,
+            $this->getConnection()->export->createTable(
+                $this->getTableName(),
                 ['version' => ['type' => 'integer', 'size' => 11]]
             );
 

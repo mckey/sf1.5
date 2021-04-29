@@ -168,19 +168,8 @@ EOF;
                     }
                 }
             }
-        } catch (Exception $e) {
-            $this->logBlock(
-                array_merge(
-                    ['The following errors occurred:', ''],
-                    array_map(
-                        function ($e) {
-                            return ' - ' . $e->getMessage();
-                        },
-                        $migration->getErrors()
-                    )
-                ),
-                'ERROR_LARGE'
-            );
+        } catch (Doctrine_Exception $e) {
+            $this->logBlock(['Migration exception:', $e->getMessage()], 'ERROR_LARGE');
         }
 
         // render errors
