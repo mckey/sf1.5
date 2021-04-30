@@ -1,48 +1,49 @@
 {
-  "name": "lexpress/symfony1",
-  "description": "Fork of symfony 1.4 with dic, form enhancements, latest swiftmailer and better performance",
-  "license": "MIT",
-  "require": {
-    "swiftmailer/swiftmailer": "~5.2",
-    "ext-mysqli": "*",
-    "ext-json": "*",
-    "ext-pdo": "*",
-    "ext-curl": "*",
-    "ext-zlib": "*",
-    "ext-calendar": "*",
-      "ext-mbstring": "*",
-      "ext-redis": "*",
-      "ext-sockets": "*",
-      "ext-intl": "*",
-      "ext-zip": "*",
-      "ext-simplexml": "*",
-      "ext-dom": "*",
-      "ext-xml": "*",
-      "ext-memcache": "*",
-      "ext-memcached": "*",
-      "ext-yaml": "*",
-      "ext-zend-opcache": "*"
-  },
-  "require-dev": {
-    "psr/log": "*"
-  },
-  "type": "library",
-  "autoload": {
-    "files": [
-      "autoload.php"
+    "name": "lexpress/symfony1",
+    "description": "Fork of symfony 1.4 with dic, form enhancements, latest swiftmailer and better performance",
+    "license": "MIT",
+    "require": {
+        "swiftmailer/swiftmailer": "~5.2",
+        "ext-mysqli": "*",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "ext-curl": "*",
+        "ext-zlib": "*",
+        "ext-calendar": "*",
+        "ext-mbstring": "*",
+        "ext-redis": "*",
+        "ext-sockets": "*",
+        "ext-intl": "*",
+        "ext-zip": "*",
+        "ext-simplexml": "*",
+        "ext-dom": "*",
+        "ext-xml": "*",
+        "ext-memcache": "*",
+        "ext-memcached": "*",
+        "ext-yaml": "*",
+        "ext-zend-opcache": "*",
+        "ext-gd": "*"
+    },
+    "require-dev": {
+        "psr/log": "*"
+    },
+    "type": "library",
+    "autoload": {
+        "files": [
+            "autoload.php"
+        ]
+    },
+    "suggest": {
+        "lexpress/doctrine1": "Doctrine plugin",
+        "propel/sf-propel-o-r-m-plugin": "Propel plugin",
+        "psr/log": "Psr logger"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.5-dev"
+        }
+    },
+    "bin": [
+        "data/bin/symfony"
     ]
-  },
-  "suggest": {
-    "lexpress/doctrine1": "Doctrine plugin",
-    "propel/sf-propel-o-r-m-plugin": "Propel plugin",
-    "psr/log": "Psr logger"
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-master": "1.5-dev"
-    }
-  },
-  "bin": [
-    "data/bin/symfony"
-  ]
 }
