@@ -20,12 +20,7 @@
  */
 class sfWebResponse extends sfResponse
 {
-  const
-    FIRST = 'first',
-    MIDDLE = '',
-    LAST = 'last',
-    ALL = 'ALL',
-    RAW = 'RAW';
+    public const RAW = 'RAW';
 
   protected
     $cookies = [],
@@ -40,17 +35,17 @@ class sfWebResponse extends sfResponse
     $javascripts = [],
     $slots = [];
 
-  static protected $statusTexts = [
-    '100' => 'Continue',
-    '101' => 'Switching Protocols',
-    '200' => 'OK',
-    '201' => 'Created',
-    '202' => 'Accepted',
-    '203' => 'Non-Authoritative Information',
-    '204' => 'No Content',
-    '205' => 'Reset Content',
-    '206' => 'Partial Content',
-    '300' => 'Multiple Choices',
+    protected static $statusTexts = [
+        '100' => 'Continue',
+        '101' => 'Switching Protocols',
+        '200' => 'OK',
+        '201' => 'Created',
+        '202' => 'Accepted',
+        '203' => 'Non-Authoritative Information',
+        '204' => 'No Content',
+        '205' => 'Reset Content',
+        '206' => 'Partial Content',
+        '300' => 'Multiple Choices',
     '301' => 'Moved Permanently',
     '302' => 'Found',
     '303' => 'See Other',
@@ -222,11 +217,11 @@ class sfWebResponse extends sfResponse
     return $this->statusText;
   }
 
-  /**
-   * Retrieves status code for the current web response.
-   *
-   * @return integer Status code
-   */
+    /**
+     * Retrieves status code for the current web response.
+     *
+     * @return int Status code
+     */
   public function getStatusCode()
   {
     return $this->statusCode;
@@ -432,17 +427,17 @@ class sfWebResponse extends sfResponse
    *
    * @return string Formatted date
    */
-  static public function getDate($timestamp, $type = 'rfc1123')
-  {
-    $type = strtolower($type);
+    public static function getDate($timestamp, $type = 'rfc1123')
+    {
+        $type = strtolower($type);
 
-    if ($type == 'rfc1123') {
-      return substr(gmdate('r', $timestamp), 0, -5) . 'GMT';
-    } else {
-      if ($type == 'rfc1036') {
-        return gmdate('l, d-M-y H:i:s ', $timestamp) . 'GMT';
-      } else {
-        if ($type == 'asctime') {
+        if ($type == 'rfc1123') {
+            return substr(gmdate('r', $timestamp), 0, -5) . 'GMT';
+        } else {
+            if ($type == 'rfc1036') {
+                return gmdate('l, d-M-y H:i:s ', $timestamp) . 'GMT';
+            } else {
+                if ($type == 'asctime') {
           return gmdate('D M j H:i:s', $timestamp);
         } else {
           throw new InvalidArgumentException('The second getDate() method parameter must be one of: rfc1123, rfc1036 or asctime.');
@@ -562,19 +557,20 @@ class sfWebResponse extends sfResponse
     if (null === $value) {
       unset($this->metas[$key]);
 
-      return;
+        return;
     }
 
-    // FIXME: If you use the i18n layer and escape the data here, it won't work
-    // see include_metas() in AssetHelper
-    if ($escape) {
-      $value = htmlspecialchars($value, ENT_QUOTES, $this->options['charset']);
-    }
+      // FIXME: If you use the i18n layer and escape the data here, it won't work
+      // see include_metas() in AssetHelper
+      if ($escape && is_string($value)) {
+          $value = htmlspecialchars($value, ENT_QUOTES, $this->options['charset']);
+      }
 
-    $current = isset($this->metas[$key]) ? $this->metas[$key] : null;
-    if ($replace || !$current) {
-      $this->metas[$key] = $value;
-    }
+      $current = $this->metas[$key] ?? null;
+
+      if ($replace || !$current) {
+          $this->metas[$key] = $value;
+      }
   }
 
   /**
@@ -587,13 +583,13 @@ class sfWebResponse extends sfResponse
     return isset($this->metas['title']) ? $this->metas['title'] : '';
   }
 
-  /**
-   * Preprend title
-   *
-   * @param string $title Title name
-   * @param string $separator Separator string (default: " - ")
-   * @param boolean $escape true, for escaping the title
-   */
+    /**
+     * Preprend title
+     *
+     * @param string $title     Title name
+     * @param string $separator Separator string (default: " - ")
+     * @param bool   $escape    true, for escaping the title
+     */
   public function prependTitle($title, $separator = ' - ', $escape = true)
   {
     if (!isset($this->metas['title'])) {
