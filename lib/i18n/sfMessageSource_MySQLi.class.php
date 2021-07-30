@@ -149,7 +149,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
       "SELECT t.id, t.source, t.target, t.comments
         FROM trans_unit t, catalogue c
         WHERE c.id =  t.catalogue_id
-          AND c.name = '{$variant}'
+          AND c.name = '$variant'
         ORDER BY id";
 
     $rs = $this->db->execute($statement);
@@ -175,7 +175,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    */
   protected function getLastModified($source)
   {
-    $statement = $this->db->execute("SELECT updated_at FROM catalogue WHERE name = '{$source}'");
+      $statement = $this->db->execute("SELECT updated_at FROM catalogue WHERE name = '$source'");
 
     $row = $statement->fetch(Doctrine_Core::FETCH_NUM);
 
@@ -195,21 +195,22 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $variant_culture = $variant_array[1] ?? $this->culture;
 
     if (
-      in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
-      !in_array($variant_culture, ['ru', 'ua', 'is', 'da', 'sv', 'cn']) ||
-      !in_array($this->culture, ['ru', 'ua', 'is', 'da', 'sv', 'cn'])
+        in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
+        count($variant_array) > 2 ||
+        !in_array($variant_culture, ['ru', 'ua', 'it', 'de', 'zh', 'is', 'da', 'es']) ||
+        !in_array($this->culture, ['ru', 'ua', 'it', 'de', 'zh', 'is', 'da', 'es'])
     ) {
       return false;
     }
 
-    $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$variant}'");
+      $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '$variant'");
 
     if ($rs->rowCount() == 0) {
-      $time = date('Y-m-d h:i:s');
-      $statement = "INSERT INTO catalogue
+        $time = date('Y-m-d h:i:s');
+        $statement = "INSERT INTO catalogue
         (name,source_lang,target_lang,created_at,created_by,updated_at,updated_by) VALUES
-        ('{$variant}','en','{$this->culture}','{$time}',1,'{$time}',1)";
-      $rs = $this->db->execute($statement);
+        ('$variant','en','$this->culture','$time',1,'$time',1)";
+        $rs = $this->db->execute($statement);
     }
 
     return $rs->rowCount() == 1;
@@ -228,7 +229,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $name = $this->getSource($variant);
 
-    $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '{$name}'");
+      $rs = $this->db->execute("SELECT id FROM catalogue WHERE name = '$name'");
 
     if ($rs->rowCount() != 1) {
       return [];
@@ -237,8 +238,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $catalogue = $rs->fetch(Doctrine_Core::FETCH_NUM);
     $cat_id = (int)$catalogue[0];
 
-    $rs = $this->db->execute("SELECT id FROM trans_unit WHERE catalogue_id = {$cat_id}");
-    $count = $rs->rowCount();
+      $rs = $this->db->execute("SELECT id FROM trans_unit WHERE catalogue_id = $cat_id");
+      $count = $rs->rowCount();
 
     return [$cat_id, $variant, $count];
   }
@@ -255,7 +256,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
   {
     $time = date('Y-m-d h:i:s');
 
-    $result = $this->db->exec("UPDATE catalogue SET updated_at = '{$time}' WHERE id = {$cat_id}");
+      $result = $this->db->exec("UPDATE catalogue SET updated_at = '$time' WHERE id = $cat_id");
 
     if ($this->cache) {
       $this->cache->remove($variant . ':' . $this->culture);
@@ -304,9 +305,9 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
       if (!empty($message)) {
         $this->db->exec(
-          "INSERT INTO trans_unit
+            "INSERT INTO trans_unit
                        (catalogue_id,msg,source,target,comments,created_at,created_by,updated_at,updated_by)
-                VALUES ({$cat_id}, {$count},{$message},'','save','{$time}',1,'{$time}',1)"
+                VALUES ($cat_id, $count,$message,'','','$time',1,'$time',1)"
         );
       }
     }
@@ -353,13 +354,13 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
 
     $formatter = new Doctrine_Formatter();
     $source = $formatter->quote($source, 'string');
-    $target = $formatter->quote($target, 'string');
-    $comments = $formatter->quote($comments . ' add', 'string');
-    $result = $this->db->exec(
-      "INSERT INTO trans_unit
+      $target = $formatter->quote($target, 'string');
+      $comments = $formatter->quote($comments, 'string');
+      $result = $this->db->exec(
+          "INSERT INTO trans_unit
         (catalogue_id,msg,source,target,comments,created_at,created_by,updated_at,updated_by) VALUES
-        ({$cat_id},{$count},{$source},{$target},{$comments},'{$time}',{$user_id},'{$time}',{$user_id})"
-    );
+        ($cat_id,$count,$source,$target,$comments,'$time',$user_id,'$time',$user_id)"
+      );
 
     if (!empty($result)) {
       $this->updateCatalogueTime($cat_id, $variant);
@@ -388,7 +389,7 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $deleted = false;
 
     $rs = $this->db->execute(
-      "DELETE FROM trans_unit WHERE catalogue_id = {$cat_id} AND BINARY source = '{$message}'"
+        "DELETE FROM trans_unit WHERE catalogue_id = $cat_id AND BINARY source = '$message'"
     );
 
     if ($rs->rowCount() == 1) {
@@ -433,8 +434,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     $updated = false;
 
     $rs = $this->db->execute(
-      "UPDATE trans_unit SET target = {$target}, comments = {$comments}, updated_at = '{$time}' " .
-      "WHERE catalogue_id = {$cat_id} AND BINARY source = {$text}"
+        "UPDATE trans_unit SET target = $target, comments = $comments, updated_at = '$time' " .
+        "WHERE catalogue_id = $cat_id AND BINARY source = $text"
     );
 
     if ($rs->rowCount() == 1) {

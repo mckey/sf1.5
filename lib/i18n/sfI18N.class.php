@@ -110,7 +110,7 @@ class sfI18N
      *
      * @return Boolean true if messages are stored in a file, false otherwise
      */
-    static public function isMessageSourceFileBased($source)
+    public static function isMessageSourceFileBased($source)
     {
         $class = 'sfMessageSource_' . $source;
 
@@ -120,7 +120,7 @@ class sfI18N
     /**
      * Sets Translator mode
      *
-     * @param boolean $translator_mode
+     * @param bool   $translator_mode
      * @param string $prefix
      * @param string $suffix
      */
@@ -320,14 +320,14 @@ class sfI18N
      * Returns a timestamp from a date with time formatted with a given culture.
      *
      * @param string $dateTime The formatted date with time as string
-     * @param string $culture The culture
+     * @param string $culture  The culture
      *
-     * @return integer The timestamp
+     * @return int The timestamp
      */
     public function getTimestampForCulture($dateTime, $culture = null)
     {
-        list($day, $month, $year) = $this->getDateForCulture($dateTime, null === $culture ? $this->culture : $culture);
-        list($hour, $minute) = $this->getTimeForCulture($dateTime, null === $culture ? $this->culture : $culture);
+        [$day, $month, $year] = $this->getDateForCulture($dateTime, null === $culture ? $this->culture : $culture);
+        [$hour, $minute] = $this->getTimeForCulture($dateTime, null === $culture ? $this->culture : $culture);
 
         return null === $day ? null : mktime($hour, $minute, 0, $month, $day, $year);
     }
