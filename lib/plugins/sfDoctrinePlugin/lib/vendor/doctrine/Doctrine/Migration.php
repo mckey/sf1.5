@@ -280,9 +280,9 @@ class Doctrine_Migration
     public function setCurrentVersion(int $number)
     {
         if ($this->hasMigrated()) {
-            $this->getConnection()->execute("UPDATE {$this->getTableName()} SET version = {$number}");
+            $this->getConnection()->execute("UPDATE {$this->getTableName()} SET version = $number");
         } else {
-            $this->getConnection()->execute("INSERT INTO {$this->getTableName()} (version) VALUES ({$number})");
+            $this->getConnection()->execute("INSERT INTO {$this->getTableName()} (version) VALUES ($number)");
         }
     }
 
@@ -389,7 +389,8 @@ class Doctrine_Migration
             try {
                 $this->getConnection()->rollback();
             } catch (PDOException $e) {
-                $this->addError($e);
+                // Hiding transaction error
+                // $this->addError($e);
             }
 
             if ($dryRun) {
@@ -401,7 +402,8 @@ class Doctrine_Migration
             try {
                 $this->getConnection()->rollback();
             } catch (PDOException $e) {
-                $this->addError($e);
+                // Hiding transaction error
+                // $this->addError($e);
             }
 
             if ($this->hasErrors()) {
@@ -413,7 +415,8 @@ class Doctrine_Migration
             try {
                 $this->getConnection()->commit();
             } catch (PDOException $e) {
-                $this->addError($e);
+                // Hiding transaction error
+                // $this->addError($e);
             }
 
             $this->setCurrentVersion($to);
