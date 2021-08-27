@@ -22,19 +22,19 @@
  */
 class sfWebRequest extends sfRequest
 {
-    const
-      PORT_HTTP = 80,
-      PORT_HTTPS = 443;
+    public const
+        PORT_HTTP = 80public,
+        PORT_HTTPS = 443;
 
     protected
-      $languages = null,
-      $charsets = null,
-      $acceptableContentTypes = null,
-      $pathInfoArray = null,
-      $relativeUrlRoot = null,
-      $getParameters = null,
-      $postParameters = null,
-      $requestParameters = null,
+        $languages = null,
+        $charsets = null,
+        $acceptableContentTypes = null,
+        $pathInfoArray = null,
+        $relativeUrlRoot = null,
+        $getParameters = null,
+        $postParameters = null,
+        $requestParameters = null,
       $formats = [],
       $format = null,
       $fixedFileArray = false;
@@ -314,7 +314,7 @@ class sfWebRequest extends sfRequest
     /**
      * See if the client is using absolute uri
      *
-     * @return boolean true, if is absolute uri otherwise false
+     * @return bool true, if is absolute uri otherwise false
      */
     public function isAbsUri()
     {
@@ -339,7 +339,7 @@ class sfWebRequest extends sfRequest
 
         // extract port from host or environment variable
         if (false !== strpos($host, ':')) {
-            list($host, $port) = explode(':', $host, 2);
+            [$host, $port] = explode(':', $host, 2);
         } else if ($protocolPort = $this->getOption($protocol . '_port')) {
             $port = $protocolPort;
         } else if (isset($pathArray['SERVER_PORT'])) {
@@ -360,7 +360,7 @@ class sfWebRequest extends sfRequest
     /**
      * Returns true if the current or forwarded request is secure (HTTPS protocol).
      *
-     * @return boolean
+     * @return bool
      */
     public function isSecure()
     {
@@ -377,7 +377,7 @@ class sfWebRequest extends sfRequest
     /**
      * Returns true if the current request is forwarded from a request that is secure.
      *
-     * @return boolean
+     * @return bool
      */
     protected function isForwardedSecure()
     {
@@ -543,45 +543,51 @@ class sfWebRequest extends sfRequest
     }
 
     /**
-     * Returns referer url.
+     * Returns referrer url.
      *
-     * @param boolean $forwarded
+     * @param bool $forwarded
+     *
      * @return string
      */
-    public function getRefererUrl($forwarded = false)
+    public function getRefererUrl(bool $forwarded = false) : string
     {
-        $referer = $this->getReferer();
-        if (empty($referer)) {
+        $referrer = $this->getReferer();
+
+        if (empty($referrer)) {
             return '/';
         }
-        $referer_array = explode('?', $referer);
-        $referer_url = $referer_array[0];
-        $referer_params = [];
-        if (count($referer_array) == 2) {
-            $referer_params = explode('&', $referer_array[1]);
-            foreach ($referer_params as $param) {
-                if ($param != 'forwarded=1') {
-                    $referer_params[] = $param;
+
+        $referrer_array = explode('?', $referrer);
+        $referrer_url = $referrer_array[0];
+        $referrer_params = [];
+
+        if (count($referrer_array) === 2) {
+            $referrer_params = explode('&', $referrer_array[1]);
+
+            foreach ($referrer_params as $param) {
+                if ($param !== 'forwarded=1') {
+                    $referrer_params[] = $param;
                 }
             }
         }
 
         if ($forwarded) {
-            $referer_params[] = 'forwarded=1';
+            $referrer_params[] = 'forwarded=1';
         }
-        return $referer_url . (!empty($referer_params) ? '?' . implode('&', $referer_params) : '');
+
+        return $referrer_url . (!empty($referrer_params) ? '?' . implode('&', $referrer_params) : '');
     }
 
     /**
-     * Returns referer.
+     * Returns referrer.
      *
      * @return string
      */
-    public function getReferer()
+    public function getReferer() : string
     {
         $pathArray = $this->getPathInfoArray();
 
-        return isset($pathArray['HTTP_REFERER']) ? $pathArray['HTTP_REFERER'] : '';
+        return $pathArray['HTTP_REFERER'] ?? '';
     }
 
     /**
@@ -591,7 +597,7 @@ class sfWebRequest extends sfRequest
      *
      * @return bool true if the current method is the given one, false otherwise
      */
-    public function isMethod($method)
+    public function isMethod(string $method) : bool
     {
         return strtoupper($method) == $this->getMethod();
     }
@@ -599,16 +605,16 @@ class sfWebRequest extends sfRequest
     /**
      * Returns the preferred culture for the current request.
      *
-     * @param array $cultures An array of ordered cultures available
+     * @param array|null $cultures An array of ordered cultures available
      *
      * @return string The preferred culture
      */
-    public function getPreferredCulture(array $cultures = null)
+    public function getPreferredCulture(?array $cultures = null) : ?string
     {
         $preferredCultures = $this->getLanguages();
 
         if (null === $cultures) {
-            return isset($preferredCultures[0]) ? $preferredCultures[0] : null;
+            return $preferredCultures[0] ?? null;
         }
 
         if (!$preferredCultures) {
@@ -617,7 +623,7 @@ class sfWebRequest extends sfRequest
 
         $preferredCultures = array_values(array_intersect($preferredCultures, $cultures));
 
-        return isset($preferredCultures[0]) ? $preferredCultures[0] : $cultures[0];
+        return $preferredCultures[0] ?? $cultures[0];
     }
 
     /**
@@ -625,7 +631,7 @@ class sfWebRequest extends sfRequest
      *
      * @return array Languages ordered in the user browser preferences
      */
-    public function getLanguages()
+    public function getLanguages() : ?array
     {
         if ($this->languages) {
             return $this->languages;
@@ -704,7 +710,7 @@ class sfWebRequest extends sfRequest
      *
      * @return array List of charsets in preferable order
      */
-    public function getCharsets()
+    public function getCharsets() : ?array
     {
         if ($this->charsets) {
             return $this->charsets;
@@ -724,7 +730,7 @@ class sfWebRequest extends sfRequest
      *
      * @return array Languages ordered in the user browser preferences
      */
-    public function getAcceptableContentTypes()
+    public function getAcceptableContentTypes() : ?array
     {
         if ($this->acceptableContentTypes) {
             return $this->acceptableContentTypes;
@@ -747,28 +753,22 @@ class sfWebRequest extends sfRequest
      *
      * @return bool true if the request is an XMLHttpRequest, false otherwise
      */
-    public function isXmlHttpRequest()
+    public function isXmlHttpRequest() : bool
     {
-        return ($this->getHttpHeader('X_REQUESTED_WITH') == 'XMLHttpRequest');
+        return $this->getHttpHeader('X_REQUESTED_WITH') === 'XMLHttpRequest';
     }
 
     /**
      * Gets the value of a cookie.
      *
-     * @param string $name Cookie name
-     * @param string $defaultValue Default value returned when no cookie with given name is found
+     * @param string $name         Cookie name
+     * @param mixed  $defaultValue Default value returned when no cookie with given name is found
      *
-     * @return string The cookie value
+     * @return mixed The cookie value
      */
-    public function getCookie($name, $defaultValue = null)
+    public function getCookie(string $name, $defaultValue = null)
     {
-        $retval = $defaultValue;
-
-        if (isset($_COOKIE[$name])) {
-            $retval = $_COOKIE[$name];
-        }
-
-        return $retval;
+        return $_COOKIE[$name] ?? $defaultValue;
     }
 
     /**
@@ -835,7 +835,7 @@ class sfWebRequest extends sfRequest
      *
      * @return array An array of re-ordered uploaded file information
      */
-    static public function convertFileInformation(array $taintedFiles)
+    public static function convertFileInformation(array $taintedFiles)
     {
         $files = [];
         foreach ($taintedFiles as $key => $data) {
@@ -852,7 +852,7 @@ class sfWebRequest extends sfRequest
      *
      * @return array The fixed PHP files array
      */
-    static protected function fixPhpFilesArray(array $data)
+    protected static function fixPhpFilesArray(array $data)
     {
         $fileKeys = ['error', 'name', 'size', 'tmp_name', 'type'];
         $keys = array_keys($data);
@@ -933,7 +933,7 @@ class sfWebRequest extends sfRequest
     /**
      * Returns the client IP address that made the request.
      *
-     * @param boolean $proxy Whether the current request has been made behind a proxy or not
+     * @param bool $proxy Whether the current request has been made behind a proxy or not
      *
      * @return string Client IP(s)
      */
