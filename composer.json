@@ -22,7 +22,8 @@
         "ext-memcached": "*",
         "ext-yaml": "*",
         "ext-zend-opcache": "*",
-        "ext-gd": "*"
+        "ext-gd": "*",
+        "ext-libxml": "*"
     },
     "require-dev": {
         "psr/log": "*"
