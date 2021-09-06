@@ -328,17 +328,20 @@ class sfConfigCache
     @fwrite($fp, $data);
     @fclose($fp);
 
-    // Hack from Agavi (http://trac.agavi.org/changeset/3979)
-    // With php < 5.2.6 on win32, renaming to an already existing file doesn't work, but copy does,
-    // so we simply assume that when rename() fails that we are on win32 and try to use copy()
-    if (!@rename($tmpFile, $cache)) {
-      if (copy($tmpFile, $cache)) {
-        unlink($tmpFile);
+      // Hack from Agavi (http://trac.agavi.org/changeset/3979)
+      // With php < 5.2.6 on win32, renaming to an already existing file doesn't work, but copy does,
+      // so we simply assume that when rename() fails that we are on win32 and try to use copy()
+      if (!@rename($tmpFile, $cache)) {
+          if (copy($tmpFile, $cache)) {
+              unlink($tmpFile);
+          }
       }
-    }
 
-    chmod($cache, 0666);
-    umask($current_umask);
+      if (file_exists($cache)) {
+          chmod($cache, 0666);
+      }
+
+      umask($current_umask);
   }
 
   /**
