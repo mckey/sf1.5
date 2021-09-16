@@ -94,46 +94,52 @@ class sfWebRequest extends sfRequest
                     if (isset($postParameters['sf_method'])) {
                         $this->setMethod(strtoupper($postParameters['sf_method']));
                         unset($postParameters['sf_method']);
+                    } elseif (isset($this->getParameters['sf_method'])) {
+                        $this->setMethod(strtoupper($this->getParameters['sf_method']));
+                        unset($this->getParameters['sf_method']);
                     } else {
-                        if (isset($this->getParameters['sf_method'])) {
-                            $this->setMethod(strtoupper($this->getParameters['sf_method']));
-                            unset($this->getParameters['sf_method']);
-                        } else {
-                            $this->setMethod(self::POST);
-                        }
+                        $this->setMethod(self::POST);
                     }
-                    $this->parameterHolder->remove('sf_method');
-                    break;
 
+                    $this->parameterHolder->remove('sf_method');
+
+                    if ('application/json' === $this->getContentType()) {
+                        $postParameters = json_decode($this->getContent(), true);
+                    }
+
+                    break;
                 case 'PUT':
                     $this->setMethod(self::PUT);
+
                     if ('application/x-www-form-urlencoded' === $this->getContentType()) {
                         parse_str($this->getContent(), $postParameters);
                     }
-                    break;
 
+                    break;
                 case 'PATCH':
                     $this->setMethod(self::PATCH);
+
                     if ('application/x-www-form-urlencoded' === $this->getContentType()) {
                         parse_str($this->getContent(), $postParameters);
                     }
-                    break;
 
+                    break;
                 case 'DELETE':
                     $this->setMethod(self::DELETE);
+
                     if ('application/x-www-form-urlencoded' === $this->getContentType()) {
                         parse_str($this->getContent(), $postParameters);
                     }
-                    break;
 
+                    break;
                 case 'HEAD':
                     $this->setMethod(self::HEAD);
-                    break;
 
+                    break;
                 case 'OPTIONS':
                     $this->setMethod(self::OPTIONS);
-                    break;
 
+                    break;
                 default:
                     $this->setMethod(self::GET);
             }
