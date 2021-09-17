@@ -74,24 +74,31 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
    *
    * @var array
    */
-  protected array $dsn;
+    protected array $dsn;
 
-  /**
-   * A resource link to the Doctrine
-   *
-   * @var Doctrine_Connection|null
-   */
-  protected ?Doctrine_Connection $db;
+    /**
+     * A resource link to the Doctrine
+     *
+     * @var Doctrine_Connection|null
+     */
+    protected ?Doctrine_Connection $db;
 
-  /**
-   * Constructor.
-   * Creates a new message source using MySQLi.
-   *
-   * @param sfDoctrineDatabase|string $source  MySQL data source, in PEAR's DB DSN format.
-   * @param string                    $catalog catalog name.
-   *
-   * @throws null
-   * @see MessageSource::factory();
+    /**
+     * Array of allowed cultures
+     *
+     * @var array
+     */
+    protected array $allowed_cultures = ['ru', 'ua', 'it', 'de', 'zh', 'is', 'da', 'es', 'kk', 'fi'];
+
+    /**
+     * Constructor.
+     * Creates a new message source using MySQLi.
+     *
+     * @param sfDoctrineDatabase|string $source  MySQL data source, in PEAR's DB DSN format.
+     * @param string                    $catalog catalog name.
+     *
+     * @throws null
+     * @see MessageSource::factory();
    */
   public function __construct($source, string $catalog = 'messages')
   {
@@ -197,8 +204,8 @@ class sfMessageSource_MySQLi extends sfMessageSource_Database
     if (
         in_array($variant, ['messages', 'messages.en', 'site', 'site.en']) ||
         count($variant_array) > 2 ||
-        !in_array($variant_culture, ['ru', 'ua', 'it', 'de', 'zh', 'is', 'da', 'es']) ||
-        !in_array($this->culture, ['ru', 'ua', 'it', 'de', 'zh', 'is', 'da', 'es'])
+        !in_array($variant_culture, $this->allowed_cultures) ||
+        !in_array($this->culture, $this->allowed_cultures)
     ) {
       return false;
     }
