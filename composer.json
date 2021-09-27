@@ -23,7 +23,8 @@
         "ext-yaml": "*",
         "ext-zend-opcache": "*",
         "ext-gd": "*",
-        "ext-libxml": "*"
+        "ext-libxml": "*",
+        "ext-ftp": "*"
     },
     "require-dev": {
         "psr/log": "*"
