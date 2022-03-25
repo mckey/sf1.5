@@ -180,7 +180,8 @@ class Doctrine_Migration
         foreach ((array)$directory as $dir) {
             $it = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($dir),
-                RecursiveIteratorIterator::LEAVES_ONLY
+                RecursiveIteratorIterator::LEAVES_ONLY,
+                RecursiveIteratorIterator::CATCH_GET_CHILD
             );
 
             if (isset(self::$_migrationClassesForDirectories[$dir])) {
